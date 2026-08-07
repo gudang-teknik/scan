@@ -1,0 +1,11 @@
+{
+  "name": "Gudang Teknik",
+  "short_name": "Gudang",
+  "start_url": "./scanner.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1F4E78",
+  "theme_color": "#1F4E78",
+  "lang": "id",
+  "icons": []
+}
