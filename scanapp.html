@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Gudang Teknik</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F4E78">
+<style>
+  :root{
+    --biru:#1F4E78; --hijau:#137A3E; --merah:#B3261E;
+    --abu:#5B6472; --garis:#D3D9E0; --latar:#EEF1F5;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{ font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+        background:var(--latar); color:#15191F; font-size:17px; padding-bottom:30px; }
+
+  /* ---------- status atas ---------- */
+  #status{ display:flex; gap:1px; background:var(--garis); font-size:12px; }
+  #status div{ flex:1; background:#fff; padding:7px 4px; text-align:center; line-height:1.35; }
+  #status b{ display:block; font-size:14px; }
+  .baik{ color:var(--hijau); } .buruk{ color:var(--merah); } .netral{ color:var(--abu); }
+
+  /* ---------- pilih mode ---------- */
+  #pilihMode{ display:flex; gap:10px; padding:12px; }
+  #pilihMode button{ flex:1; padding:26px 8px; border:3px solid transparent; border-radius:14px;
+        font-size:17px; font-weight:800; color:#fff; line-height:1.3; }
+  #bMasuk{ background:var(--hijau); }
+  #bKeluar{ background:var(--merah); }
+  #pilihMode button span{ display:block; font-size:12px; font-weight:600; opacity:.9; margin-top:5px; }
+
+  /* ---------- kepala mode aktif ---------- */
+  #kepala{ padding:12px 14px; color:#fff; display:flex; justify-content:space-between;
+           align-items:center; font-weight:800; font-size:17px; }
+  #kepala.masuk{ background:var(--hijau); } #kepala.keluar{ background:var(--merah); }
+  #kepala button{ background:rgba(255,255,255,.22); color:#fff; border:0;
+                  padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700; }
+
+  .isi{ padding:12px; }
+  .kartu{ background:#fff; border-radius:14px; padding:16px; margin-bottom:12px;
+          box-shadow:0 1px 3px rgba(0,0,0,.10); }
+  .langkah{ font-size:12px; font-weight:800; color:var(--abu); letter-spacing:.08em;
+            margin-bottom:10px; }
+
+  button.besar{ width:100%; padding:20px; font-size:18px; font-weight:800; border:0;
+        border-radius:12px; color:#fff; background:var(--biru); margin-top:10px; }
+  button.hijau{ background:var(--hijau); } button.abu{ background:#8C96A3; }
+  button:disabled{ opacity:.55; }
+
+  label{ display:block; font-size:14px; font-weight:700; color:#39424E; margin:14px 0 5px; }
+  label i{ font-style:normal; color:var(--abu); font-weight:500; }
+  input{ width:100%; padding:15px; font-size:18px; border:2px solid var(--garis);
+         border-radius:10px; background:#fff; color:#15191F; }
+  input:focus{ outline:0; border-color:var(--biru); }
+  input.salah{ border-color:var(--merah); background:#FEF3F2; }
+
+  #reader{ width:100%; border-radius:12px; overflow:hidden; margin-top:10px; }
+  #reader video{ width:100% !important; border-radius:12px; }
+
+  .barang{ background:#F3F7FB; border:2px solid #C9DCEC; border-radius:12px; padding:14px; }
+  .barang .kode{ font-weight:800; color:var(--biru); font-size:15px; }
+  .barang .nama{ font-size:19px; font-weight:700; margin:6px 0; line-height:1.3; }
+  .barang .rinci{ font-size:14px; color:var(--abu); }
+
+  .hasil div{ padding:15px 12px; border-bottom:1px solid var(--garis); }
+  .hasil .k{ font-weight:800; color:var(--biru); font-size:14px; }
+  .hasil .n{ font-size:16px; margin-top:3px; }
+
+  .ringkas{ border:3px solid; border-radius:12px; padding:14px; margin-top:16px; }
+  .ringkas.masuk{ border-color:var(--hijau); background:#EFFaf3; }
+  .ringkas.keluar{ border-color:var(--merah); background:#FEF3F2; }
+  .ringkas .judul{ font-size:12px; font-weight:800; letter-spacing:.06em; }
+  .ringkas.masuk .judul{ color:var(--hijau); } .ringkas.keluar .judul{ color:var(--merah); }
+  .ringkas .baris{ display:flex; justify-content:space-between; gap:10px;
+                   padding:5px 0; font-size:15px; }
+  .ringkas .baris b{ text-align:right; }
+
+  .pesan{ padding:14px; border-radius:10px; font-size:15px; margin-top:12px;
+          font-weight:600; line-height:1.4; }
+  .p-ok{ background:#E4F6EB; color:#0B5130; border:2px solid #9FD9B6; }
+  .p-salah{ background:#FDECEA; color:#7A1710; border:2px solid #F0B4AE; }
+  .p-info{ background:#EAF2FA; color:#123A5C; border:2px solid #B4CFE6; }
+
+  #sukses{ text-align:center; padding:26px 16px; }
+  #sukses .tanda{ font-size:56px; line-height:1; }
+  #sukses .apa{ font-size:20px; font-weight:800; margin:12px 0 4px; }
+  #sukses .det{ color:var(--abu); font-size:15px; }
+
+  .catatan{ font-size:12px; color:var(--abu); text-align:center; margin-top:14px; line-height:1.5; }
+  .x{ display:none !important; }
+</style>
+</head>
+<body>
+
+<!-- ============ ISI DUA BARIS INI ============ -->
+<script>
+  var VERSI = 'v10 · 11 Agu 2026';
+  var API   = 'https://script.google.com/macros/s/AKfycbx_dOtvG9mz84dfBh7REVlPW2B0HR3ztbhHmXj7aAURpCOvhMfX8IXNviaCQvqwH3hB3w/exec';
+  var TOKEN = '1234';
+</script>
+
+<div id="status">
+  <div><b id="sSinyal" class="netral">…</b>Koneksi</div>
+  <div><b id="sAntre" class="netral">0</b>Belum terkirim</div>
+  <div><b id="sData" class="netral">…</b>Data barang</div>
+</div>
+
+<!-- LANGKAH 0 : pilih mode -->
+<div id="pilihMode">
+  <button id="bMasuk">BARANG<br>MASUK</button>
+  <button id="bKeluar">BARANG<br>KELUAR</button>
+</div>
+
+<!-- kepala saat mode aktif -->
+<div id="kepala" class="x"><span id="kepalaTeks"></span><button id="bGanti">GANTI</button></div>
+
+<div class="isi">
+
+  <!-- LANGKAH 1 : pilih barang -->
+  <div class="kartu x" id="k1">
+    <div class="langkah">LANGKAH 1 — PILIH BARANG</div>
+    <button class="besar" id="bScan">SCAN QR</button>
+    <label>Atau ketik nama / kode barang</label>
+    <input id="q" placeholder="contoh: bearing 6016" autocomplete="off">
+    <div id="reader" class="x"></div>
+    <div class="hasil" id="hasil"></div>
+  </div>
+
+  <!-- LANGKAH 2 : konfirmasi barang hasil scan -->
+  <div class="kartu x" id="kKonfirmasi">
+    <div class="langkah">LANGKAH 2 — PASTIKAN BARANGNYA BENAR</div>
+    <div class="barang">
+      <div class="kode" id="cKode"></div>
+      <div class="nama" id="cNama"></div>
+      <div class="rinci" id="cRinci"></div>
+    </div>
+    <button class="besar hijau" id="bBenar">YA, BARANG INI BENAR</button>
+    <button class="besar abu" id="bSalah">BUKAN — PILIH ULANG</button>
+  </div>
+
+  <!-- LANGKAH 3 : isi jumlah & keterangan -->
+  <div class="kartu x" id="k2">
+    <div class="langkah">LANGKAH 3 — ISI DATA</div>
+
+    <div class="barang">
+      <div class="kode" id="iKode"></div>
+      <div class="nama" id="iNama"></div>
+      <div class="rinci" id="iRinci"></div>
+    </div>
+
+    <label>QTY <i id="lSatuan"></i></label>
+    <input id="qty" type="number" inputmode="decimal" min="0" step="any" placeholder="0">
+
+    <label>User</label>
+    <input id="user" autocomplete="off">
+
+    <div id="grupMasuk">
+      <label>Supplier</label><input id="supplier" autocomplete="off">
+      <label>No PO</label><input id="po" autocomplete="off">
+      <label>No PR</label><input id="pr" autocomplete="off">
+    </div>
+    <div id="grupKeluar" class="x">
+      <label>Unit</label><input id="unit" autocomplete="off">
+      <label>Keperluan</label><input id="keperluan" autocomplete="off">
+      <label>Orang Gudang</label><input id="gudang" autocomplete="off">
+    </div>
+    <label>Lokasi</label><input id="lokasi" autocomplete="off">
+
+    <div class="ringkas" id="ringkas">
+      <div class="judul" id="rJudul"></div>
+      <div class="baris"><span>Barang</span><b id="rNama">-</b></div>
+      <div class="baris"><span>QTY</span><b id="rQty">-</b></div>
+      <div class="baris"><span>User</span><b id="rUser">-</b></div>
+    </div>
+
+    <button class="besar hijau" id="bSimpan">SIMPAN</button>
+    <button class="besar abu" id="bBatal">BATAL</button>
+  </div>
+
+  <!-- LANGKAH 4 : berhasil -->
+  <div class="kartu x" id="k3">
+    <div id="sukses">
+      <div class="tanda" id="sIkon">✓</div>
+      <div class="apa" id="sApa"></div>
+      <div class="det" id="sDet"></div>
+    </div>
+    <button class="besar" id="bLagi">CATAT BARANG BERIKUTNYA</button>
+  </div>
+
+  <div id="pesan"></div>
+  <div class="catatan">
+    Catatan sementara gudang teknik. SAP tetap catatan resmi.<br>
+    <span id="tSegarkan" style="text-decoration:underline">Perbarui data barang</span><br>
+    <span id="tVersi" style="opacity:.7"></span><br>
+    <span id="tOffline" style="opacity:.7"></span>
+  </div>
+</div>
+
+<script>
+/* ID transaksi. UUID dipakai supaya dua HP tidak mungkin menghasilkan ID
+   sama — kalau sampai kembar, transaksi kedua akan dianggap kiriman ulang
+   dan dilewati diam-diam. Awalan "t" menandakan asalnya dari HP. */
+function idBaru(){
+  try {
+    if (window.crypto && crypto.randomUUID) return 't' + crypto.randomUUID();
+  } catch(e){}
+  try {
+    var a = new Uint8Array(16);
+    crypto.getRandomValues(a);
+    return 't' + Array.prototype.map.call(a, function(x){
+      return ('0'+x.toString(16)).slice(-2); }).join('');
+  } catch(e){}
+  return 't' + Date.now() + '-' + Math.random().toString(36).slice(2,12);
+}
+
+function bootGagal(t){
+  document.getElementById('pesan').innerHTML =
+    '<div class="pesan p-salah">MASALAH: ' + String(t).replace(/</g,'&lt;') + '</div>';
+}
+window.onerror = function(m,u,b){ bootGagal(m + ' (baris ' + b + ')'); };
+</script>
+
+<script src="html5-qrcode.min.js"
+        onerror="bootGagal('File html5-qrcode.min.js belum diupload ke folder yang sama.')"></script>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+
+var K_MASTER='gt_master', K_ANTRE='gt_antre', K_WAKTU='gt_waktu';
+var mode=null, terpilih=null, scanner=null, kameraJalan=false, jedaCari=null, nomorCari=0;
+var master=null, antre=[], sedangKirim=false;
+
+/* ================= penyimpanan lokal ================= */
+function tulisLokal(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+function bacaLokal(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function aman(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ================= jaringan ================= */
+function online(){ return navigator.onLine !== false; }
+
+function api(muatan, batasMs, ulang){
+  muatan.token = TOKEN;
+  var sisa = (ulang === undefined) ? 1 : ulang;      // sekali coba ulang otomatis
+  function sekali(){
+    var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+    var jam = ctrl ? setTimeout(function(){ ctrl.abort(); }, batasMs||25000) : null;
+    return fetch(API, { method:'POST', redirect:'follow',
+        headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+        body: JSON.stringify(muatan), signal: ctrl?ctrl.signal:undefined })
+      .then(function(r){ if(jam) clearTimeout(jam); return r.text(); })
+      .then(function(teks){
+        if (String(teks).trim()===''){ var k=new Error('balasan kosong'); k.ragu=true; throw k; }
+        try { return JSON.parse(teks); }
+        catch(e){
+          var bersih = String(teks).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+          var err;
+          if (bersih.indexOf('ServiceLogin')>-1 || bersih.indexOf('Sign in')>-1)
+            err = new Error('Server minta login. Deployment harus disetel "Anyone".');
+          else err = new Error('Balasan tidak dikenali: ' + bersih.substring(0,150));
+          err.ragu = true; throw err;
+        }
+      });
+  }
+  return sekali().catch(function(e){
+    if (sisa > 0){ return new Promise(function(res){ setTimeout(res, 1500); }).then(sekali); }
+    throw e;
+  });
+}
+
+/* ================= papan status ================= */
+function papan(){
+  var s = $('sSinyal');
+  if (online()){ s.textContent='ONLINE'; s.className='baik'; }
+  else { s.textContent='OFFLINE'; s.className='buruk'; }
+
+  var a = $('sAntre');
+  a.textContent = antre.length;
+  a.className = antre.length ? 'buruk' : 'baik';
+
+  var d = $('sData'), w = bacaLokal(K_WAKTU);
+  if (!master){ d.textContent='BELUM'; d.className='buruk'; }
+  else {
+    var hari = w ? Math.floor((Date.now()-w)/86400000) : 0;
+    d.textContent = hari===0 ? 'HARI INI' : hari+' HARI';
+    d.className = hari>30 ? 'buruk' : 'baik';
+  }
+}
+window.addEventListener('online',  function(){ jedaUlang = 5000; papan(); kirimAntre(); });
+window.addEventListener('offline', papan);
+
+function pesan(t, jenis){
+  $('pesan').innerHTML = '<div class="pesan p-'+jenis+'">'+aman(t)+'</div>';
+}
+
+/* ================= data master di HP ================= */
+/* paksa = true berarti diminta petugas lewat "Perbarui data barang".
+   Hanya saat itu prosesnya diberi pesan; unduhan otomatis berjalan diam-diam
+   supaya layar awal tidak membingungkan. Status tetap terlihat di papan atas. */
+function muatMaster(paksa){
+  var lokal = bacaLokal(K_MASTER);
+  if (lokal && lokal.length && !paksa){ master = lokal; papan(); return; }
+  if (!online()){ if (paksa) pesan('Tidak ada sinyal. Data barang belum bisa diunduh.', 'salah'); return; }
+
+  if (paksa){ $('sData').textContent='…'; pesan('Memperbarui data barang…', 'info'); }
+  api({ aksi:'master' }, 90000).then(function(r){
+    if (!r || !r.ok) throw new Error((r&&r.pesan) || 'gagal');
+    master = r.data;
+    if (tulisLokal(K_MASTER, master)) tulisLokal(K_WAKTU, Date.now());
+    papan();
+    if (paksa) pesan(r.jumlah + ' barang tersimpan di HP.', 'ok');
+  }).catch(function(e){
+    papan();
+    if (paksa) pesan('Gagal memperbarui data barang: '+e.message, 'salah');
+  });
+}
+
+/* ================= antrean transaksi ================= */
+/* Pengiriman dipicu oleh EMPAT hal, bukan hanya timer:
+   1. begitu transaksi disimpan
+   2. begitu HP mendeteksi koneksi kembali
+   3. begitu aplikasi dibuka lagi / layar dinyalakan
+   4. timer cadangan, dengan jeda yang memendek saat gagal
+   Pemicu 3 penting karena WiFi yang tersambung tapi tanpa internet
+   tetap dianggap "online" oleh HP, sehingga pemicu 2 tidak menyala. */
+
+var jedaUlang = 5000;          // mulai 5 detik
+var JEDA_MAKS = 60000;
+var jamUlang = null;
+
+function jadwalkan(ms){
+  clearTimeout(jamUlang);
+  if (!antre.length) return;
+  jamUlang = setTimeout(kirimAntre, ms);
+}
+
+function kirimAntre(){
+  if (sedangKirim || !antre.length) return;
+  if (!online()){ jadwalkan(jedaUlang); return; }
+
+  sedangKirim = true;
+  /* Server kini menulis per BLOK, bukan satu per satu, sehingga 20
+     transaksi selesai jauh lebih cepat daripada versi sebelumnya. */
+  var kirim = antre.slice(0, 20);
+
+  api({ aksi:'banyak', daftar:kirim }, 90000, 1).then(function(r){
+    sedangKirim = false;
+    if (!r || !r.ok) throw new Error('ditolak server');
+    var sukses = {};
+    (r.hasil||[]).forEach(function(h){ if (h.ok) sukses[h.id] = 1; });
+    antre = antre.filter(function(x){ return !sukses[x.id]; });
+    tulisLokal(K_ANTRE, antre);
+    papan();
+    jedaUlang = 5000;                    // berhasil, kembalikan ke jeda awal
+    if (antre.length) jadwalkan(300);    // masih ada sisa, lanjut cepat
+  }).catch(function(){
+    sedangKirim = false;
+    papan();
+    /* Gagal: coba lagi makin jarang, supaya tidak membebani saat sinyal buruk. */
+    jadwalkan(jedaUlang);
+    jedaUlang = Math.min(jedaUlang * 2, JEDA_MAKS);
+  });
+}
+
+/* Aplikasi dibuka lagi atau layar dinyalakan -> langsung coba kirim. */
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden){ jedaUlang = 5000; papan(); kirimAntre(); }
+});
+window.addEventListener('focus', function(){ jedaUlang = 5000; kirimAntre(); });
+
+/* Jaring pengaman terakhir. */
+setInterval(function(){ if (antre.length && !sedangKirim) kirimAntre(); }, 15000);
+
+/* ================= alur layar ================= */
+function tampilkan(langkah){
+  $('k1').className = (langkah===1) ? 'kartu' : 'kartu x';
+  $('kKonfirmasi').className = (langkah===1.5) ? 'kartu' : 'kartu x';
+  $('k2').className = (langkah===2) ? 'kartu' : 'kartu x';
+  $('k3').className = (langkah===3) ? 'kartu' : 'kartu x';
+  $('pilihMode').className = (langkah===0) ? '' : 'x';
+  $('kepala').className = (langkah===0) ? 'x' : mode;
+  window.scrollTo(0,0);
+}
+
+function setMode(m){
+  mode = m;
+  $('kepalaTeks').textContent = (m==='masuk') ? 'BARANG MASUK' : 'BARANG KELUAR';
+  $('grupMasuk').className  = (m==='masuk') ? '' : 'x';
+  $('grupKeluar').className = (m==='keluar') ? '' : 'x';
+  $('rJudul').textContent = 'PERIKSA SEBELUM SIMPAN — ' + ((m==='masuk')?'MASUK':'KELUAR');
+  $('ringkas').className = 'ringkas ' + m;
+  bersihkanForm();
+  $('pesan').innerHTML='';
+  tampilkan(1);
+  if (!master) muatMaster(false);
+}
+
+function keAwal(){
+  mode = null; terpilih = null; hentikanKamera();
+  bersihkanForm(); $('q').value=''; $('hasil').innerHTML='';
+  tampilkan(0);
+}
+
+/* ================= pencarian ================= */
+function cariLokal(kode){
+  if (!master) return null;
+  for (var i=0;i<master.length;i++) if (master[i][0]===kode) return master[i];
+  return null;
+}
+
+var ALIAS=[['SELENOID','SOLENOID'],['TRAVO','TRAFO'],['TRANSMITER','TRANSMITTER'],
+           ['TEMPERATUR','TEMPERATURE'],['KABEL','CABLE'],['CREEPING','CREPING']];
+function samakan(t){ t=String(t).toUpperCase();
+  for(var i=0;i<ALIAS.length;i++) t=t.split(ALIAS[i][0]).join(ALIAS[i][1]); return t; }
+
+function cari(){
+  clearTimeout(jedaCari);
+  jedaCari = setTimeout(jalankanCari, 200);
+}
+
+function jalankanCari(){
+  var q = samakan($('q').value.trim());
+  if (q.length < 2){ $('hasil').innerHTML=''; return; }
+  if (!master){ $('hasil').innerHTML='<div class="n">Data barang belum diunduh.</div>'; return; }
+
+  var ini = ++nomorCari;
+  var kata = q.split(/\s+/).filter(Boolean), nilai = [];
+  for (var i=0;i<master.length;i++){
+    var K = String(master[i][0]).toUpperCase(), D = samakan(master[i][1]);
+    var g = K+' '+D, ok = true;
+    for (var j=0;j<kata.length;j++) if (g.indexOf(kata[j])<0){ ok=false; break; }
+    if (!ok) continue;
+    var s;
+    if (K===q) s=1000; else if (K.indexOf(q)===0) s=800;
+    else if (D===q) s=700; else if (D.indexOf(q)===0) s=600;
+    else if (D.indexOf(q)>-1) s=400; else s=200;
+    s -= Math.min(D.length/20, 40);
+    nilai.push([s, i]);
+  }
+  if (ini !== nomorCari) return;
+  nilai.sort(function(a,b){ return b[0]-a[0]; });
+
+  $('hasil').innerHTML = nilai.length ? nilai.slice(0,20).map(function(x){
+    var m = master[x[1]];
+    return '<div onclick="pilihKode(\'' + m[0] + '\')"><div class="k">' + aman(m[0]) +
+           '</div><div class="n">' + aman(m[1]) + '</div></div>';
+  }).join('') : '<div class="n">Tidak ada barang yang cocok.</div>';
+}
+
+window.pilihKode = function(kode){
+  var m = cariLokal(kode);
+  if (!m){ pesan('Kode "'+kode+'" tidak ada di data barang. Coba Perbarui data barang.', 'salah'); return; }
+  terpilih = { kode:m[0], nama:m[1], uom:m[2], stok:m[3], gudang:m[4], rak:m[5] };
+
+  var rinci = 'UOM ' + terpilih.uom +
+              (terpilih.gudang ? '  ·  ' + terpilih.gudang : '') +
+              (terpilih.rak ? '  ·  Rak ' + terpilih.rak : '');
+
+  /* Berhenti dulu di layar konfirmasi. Salah scan paling mahal kalau
+     baru ketahuan setelah tersimpan. */
+  $('cKode').textContent  = terpilih.kode;
+  $('cNama').textContent  = terpilih.nama;
+  $('cRinci').textContent = rinci;
+
+  $('iKode').textContent  = terpilih.kode;
+  $('iNama').textContent  = terpilih.nama;
+  $('iRinci').textContent = rinci;
+  $('lSatuan').textContent = '(' + terpilih.uom + ')';
+
+  $('pesan').innerHTML='';
+  hentikanKamera();
+  tampilkan(1.5);
+};
+
+function konfirmasiBenar(){
+  if (terpilih && terpilih.rak) $('lokasi').value = terpilih.rak;
+  perbaruiRingkas();
+  tampilkan(2);
+  $('qty').focus();
+}
+
+function konfirmasiSalah(){
+  terpilih = null;
+  $('q').value=''; $('hasil').innerHTML=''; $('pesan').innerHTML='';
+  tampilkan(1);
+}
+
+/* ================= kamera ================= */
+function bukaKamera(){
+  if (kameraJalan){ hentikanKamera(); return; }
+  if (typeof Html5Qrcode === 'undefined'){ pesan('Pembaca QR belum termuat. Muat ulang halaman.', 'salah'); return; }
+  $('reader').className=''; $('bScan').textContent='TUTUP KAMERA'; kameraJalan=true;
+  scanner = new Html5Qrcode('reader', { formatsToSupport:[
+    Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128,
+    Html5QrcodeSupportedFormats.DATA_MATRIX ]});
+  scanner.start({ facingMode:'environment' }, { fps:12, qrbox:{ width:250, height:250 } },
+    function(teks){ if(navigator.vibrate) navigator.vibrate(70); pilihKode(String(teks).trim()); },
+    function(){}
+  ).catch(function(e){
+    kameraJalan=false; $('reader').className='x'; $('bScan').textContent='SCAN QR';
+    pesan('Kamera tidak bisa dibuka: '+e+'. Gunakan pencarian ketik di bawah.', 'salah');
+  });
+}
+function hentikanKamera(){
+  if (scanner && kameraJalan){ try{ scanner.stop().then(function(){ scanner.clear(); }); }catch(e){} }
+  kameraJalan=false; $('reader').className='x'; $('bScan').textContent='SCAN QR';
+}
+
+/* ================= form ================= */
+function perbaruiRingkas(){
+  $('rNama').textContent = terpilih ? terpilih.nama : '-';
+  var q = $('qty').value;
+  $('rQty').textContent = (Number(q)>0 && terpilih) ? (q + ' ' + terpilih.uom) : 'belum diisi';
+  $('rUser').textContent = $('user').value.trim() || 'belum diisi';
+}
+
+function bersihkanForm(){
+  ['qty','supplier','po','pr','unit','keperluan','gudang','lokasi']
+    .forEach(function(id){ $(id).value=''; });
+  ['qty','user'].forEach(function(id){ $(id).className=''; });
+  perbaruiRingkas();
+}
+
+function simpan(){
+  var q = Number($('qty').value), u = $('user').value.trim();
+  $('qty').className = (q>0) ? '' : 'salah';
+  $('user').className = u ? '' : 'salah';
+  if (!(q>0)){ pesan('Jumlah belum diisi atau nol. Periksa kotak merah.', 'salah'); $('qty').focus(); return; }
+  if (!u){ pesan('Nama Anda belum diisi. Periksa kotak merah.', 'salah'); $('user').focus(); return; }
+
+  var d = { id:idBaru(), jenis:mode,
+            kode:terpilih.kode, qty:q, user:u, lokasi:$('lokasi').value.trim() };
+  if (mode==='masuk'){ d.supplier=$('supplier').value.trim(); d.po=$('po').value.trim();
+                       d.pr=$('pr').value.trim(); }
+  else { d.unit=$('unit').value.trim(); d.keperluan=$('keperluan').value.trim(); d.gudang=$('gudang').value.trim(); }
+
+  /* Masuk antrean lokal DULU. Sejak detik ini transaksinya tidak bisa hilang,
+     bahkan kalau sinyal mati atau halaman ditutup. */
+  antre.push(d);
+  tulisLokal(K_ANTRE, antre);
+  papan();
+
+  $('sIkon').textContent = '✓';
+  $('sApa').textContent = (mode==='masuk' ? 'MASUK: ' : 'KELUAR: ') + q + ' ' + terpilih.uom;
+  $('sDet').textContent = terpilih.nama;
+  $('pesan').innerHTML='';
+  tampilkan(3);
+  kirimAntre();
+}
+
+/* ================= tombol ================= */
+$('bMasuk').addEventListener('click', function(){ setMode('masuk'); });
+$('bKeluar').addEventListener('click', function(){ setMode('keluar'); });
+$('bGanti').addEventListener('click', keAwal);
+$('bScan').addEventListener('click', bukaKamera);
+$('bBenar').addEventListener('click', konfirmasiBenar);
+$('bSalah').addEventListener('click', konfirmasiSalah);
+$('bSimpan').addEventListener('click', simpan);
+$('bBatal').addEventListener('click', function(){ terpilih=null; bersihkanForm();
+  $('q').value=''; $('hasil').innerHTML=''; tampilkan(1); });
+$('bLagi').addEventListener('click', function(){ terpilih=null; bersihkanForm();
+  $('q').value=''; $('hasil').innerHTML=''; tampilkan(1); });
+$('q').addEventListener('input', cari);
+$('qty').addEventListener('input', perbaruiRingkas);
+$('user').addEventListener('input', perbaruiRingkas);
+$('tSegarkan').addEventListener('click', function(){ muatMaster(true); });
+$('tVersi').textContent = 'Versi aplikasi ' + VERSI;
+
+/* ================= mulai ================= */
+antre = bacaLokal(K_ANTRE) || [];
+master = bacaLokal(K_MASTER);
+papan();
+tampilkan(0);
+if (!master) muatMaster(false);
+kirimAntre();
+
+/* Status mode offline ditampilkan supaya kegagalan tidak lagi diam-diam.
+   Penyebab tersering: nama berkas di repo berbeda, atau sw.js belum diupload. */
+function cekOffline(){
+  var el = $('tOffline');
+  if (!('serviceWorker' in navigator)){ el.textContent = 'Mode offline: tidak didukung browser ini'; return; }
+  if (!('caches' in window)){ el.textContent = 'Mode offline: tidak didukung'; return; }
+
+  caches.keys().then(function(nama){
+    var punya = nama.filter(function(n){ return n.indexOf('gudang-teknik') === 0; });
+    if (!punya.length){ el.textContent = 'Mode offline: BELUM siap — buka sekali lagi saat ada sinyal'; return; }
+    caches.open(punya[0]).then(function(c){
+      c.keys().then(function(k){
+        var adaHalaman = k.some(function(r){ return r.url.indexOf('.html') > -1; });
+        el.textContent = adaHalaman
+          ? 'Mode offline: siap (' + punya[0] + ')'
+          : 'Mode offline: BELUM siap — halaman belum tersimpan';
+      });
+    });
+  }).catch(function(){ el.textContent = ''; });
+}
+
+/* Halaman ini sudah terlanjur diambil browser SEBELUM service worker
+   mengambil alih, jadi tidak lewat fetch handler dan tidak ikut tersimpan.
+   Akibatnya setiap kali versi naik, petugas melihat "BELUM siap" sekali —
+   terlihat seperti sistem rusak padahal normal. Karena itu halaman meminta
+   service worker menyimpan dirinya sendiri, lalu status diperiksa ulang
+   begitu balasan datang. */
+if ('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js')
+    .then(function(){ return navigator.serviceWorker.ready; })
+    .then(function(reg){
+      navigator.serviceWorker.addEventListener('message', function(ev){
+        if (ev.data && ev.data.tersimpan) cekOffline();
+      });
+      var sw = reg.active || navigator.serviceWorker.controller;
+      if (sw) sw.postMessage({ simpan: location.href });
+      setTimeout(cekOffline, 1500);          /* cadangan bila balasan tak datang */
+    })
+    .catch(function(e){ $('tOffline').textContent = 'Mode offline: gagal dipasang — ' + e.message; });
+} else { cekOffline(); }
+})();
+</script>
+</body>
+</html>
