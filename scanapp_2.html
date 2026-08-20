@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Gudang Teknik</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1F4E78">
+<style>
+  :root{
+    --biru:#1F4E78; --hijau:#137A3E; --merah:#B3261E;
+    --abu:#5B6472; --garis:#D3D9E0; --latar:#EEF1F5;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; padding:0; }
+  body{ font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+        background:var(--latar); color:#15191F; font-size:17px; padding-bottom:30px; }
+
+  /* ---------- status atas ---------- */
+  #status{ display:flex; gap:1px; background:var(--garis); font-size:12px; }
+  #status div{ flex:1; background:#fff; padding:7px 4px; text-align:center; line-height:1.35; }
+  #status b{ display:block; font-size:14px; }
+  .baik{ color:var(--hijau); } .kirim{color:#B8860B;font-weight:bold}
+.buruk{ color:var(--merah); } .netral{ color:var(--abu); }
+
+  /* ---------- pilih mode ---------- */
+  #pilihMode{ display:flex; gap:10px; padding:12px; }
+  #pilihMode button{ flex:1; padding:26px 8px; border:3px solid transparent; border-radius:14px;
+        font-size:17px; font-weight:800; color:#fff; line-height:1.3; }
+  #bMasuk{ background:var(--hijau); }
+  #bKeluar{ background:var(--merah); }
+  #pilihMode button span{ display:block; font-size:12px; font-weight:600; opacity:.9; margin-top:5px; }
+
+  /* ---------- kepala mode aktif ---------- */
+  #kepala{ padding:12px 14px; color:#fff; display:flex; justify-content:space-between;
+           align-items:center; font-weight:800; font-size:17px; }
+  #kepala.masuk{ background:var(--hijau); } #kepala.keluar{ background:var(--merah); }
+  #kepala button{ background:rgba(255,255,255,.22); color:#fff; border:0;
+                  padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700; }
+
+  .isi{ padding:12px; }
+  .kartu{ background:#fff; border-radius:14px; padding:16px; margin-bottom:12px;
+          box-shadow:0 1px 3px rgba(0,0,0,.10); }
+  .langkah{ font-size:12px; font-weight:800; color:var(--abu); letter-spacing:.08em;
+            margin-bottom:10px; }
+
+  button.besar{ width:100%; padding:20px; font-size:18px; font-weight:800; border:0;
+        border-radius:12px; color:#fff; background:var(--biru); margin-top:10px; }
+  button.hijau{ background:var(--hijau); } button.abu{ background:#8C96A3; }
+  button:disabled{ opacity:.55; }
+
+  label{ display:block; font-size:14px; font-weight:700; color:#39424E; margin:14px 0 5px; }
+  label i{ font-style:normal; color:var(--abu); font-weight:500; }
+  input{ width:100%; padding:15px; font-size:18px; border:2px solid var(--garis);
+         border-radius:10px; background:#fff; color:#15191F; }
+  input:focus{ outline:0; border-color:var(--biru); }
+  input.salah{ border-color:var(--merah); background:#FEF3F2; }
+
+  #reader{ width:100%; border-radius:12px; overflow:hidden; margin-top:10px; }
+  #reader video{ width:100% !important; border-radius:12px; }
+
+  .barang{ background:#F3F7FB; border:2px solid #C9DCEC; border-radius:12px; padding:14px; }
+  .barang .kode{ font-weight:800; color:var(--biru); font-size:15px; }
+  .barang .nama{ font-size:19px; font-weight:700; margin:6px 0; line-height:1.3; }
+  .barang .rinci{ font-size:14px; color:var(--abu); }
+
+  .hasil div{ padding:15px 12px; border-bottom:1px solid var(--garis); }
+  .hasil .k{ font-weight:800; color:var(--biru); font-size:14px; }
+  .hasil .n{ font-size:16px; margin-top:3px; }
+
+  /* Daftar barang yang belum disimpan.
+     Kata "keranjang" sengaja TIDAK dipakai di layar — itu istilah belanja
+     online. Petugas gudang membaca "BARANG YANG AKAN DISIMPAN" apa adanya. */
+  #daftarBarang{ margin-top:16px; }
+  #daftarBarang .judulDaftar{ font-size:14px; font-weight:800; color:#1F4E78;
+                              margin-bottom:8px; }
+  .brs{ border:2px solid #d6dde6; border-radius:12px; padding:10px 12px;
+        margin-bottom:8px; background:#fff; }
+  .brs.ganda{ border-color:#E8A33D; background:#FFF8EC; }
+  .brs .nm{ font-size:15px; font-weight:700; line-height:1.3; }
+  .brs .qt{ font-size:14px; color:#444; margin-top:2px; }
+  .brs .ganda-cat{ font-size:13px; font-weight:700; color:#9A6212; margin-top:4px; }
+  .brs .aksi{ display:flex; gap:8px; margin-top:8px; }
+  .brs .aksi button{ flex:1; padding:9px; font-size:14px; font-weight:800;
+                     border-radius:8px; border:2px solid #1F4E78;
+                     background:#fff; color:#1F4E78; }
+  .brs .aksi button.hps{ border-color:#B03A2E; color:#B03A2E; }
+
+  /* Tombol sekunder: JELAS lebih kecil dan tidak berlatar penuh, supaya
+     tidak terbaca sebagai tombol lanjut yang sejajar dengan SIMPAN.
+     Satu tindakan utama per layar. */
+  button.sekunder{ width:100%; padding:13px; font-size:15px; font-weight:800;
+                   border-radius:10px; border:2px solid #1F4E78;
+                   background:#fff; color:#1F4E78; margin-bottom:10px; }
+
+  /* Pengingat di halaman utama. Harus mencolok: inilah satu-satunya cara
+     petugas tahu ada pekerjaan yang belum selesai. */
+  #ingatDaftar{ background:#B03A2E; color:#fff; border-radius:12px;
+                padding:14px; margin:0 0 14px; text-align:center;
+                font-size:17px; font-weight:800; line-height:1.35; }
+  #ingatDaftar{ cursor:pointer; }
+  #ingatDaftar b.buka{ display:block; margin-top:8px; font-size:14px;
+                       background:#fff; color:#B03A2E; border-radius:8px;
+                       padding:9px; }
+  #ingatDaftar small{ display:block; font-size:13px; font-weight:600;
+                      opacity:.92; margin-top:4px; }
+
+  #periksaJenis{ margin-bottom:10px; }
+  .pk{ border:2px solid #1F4E78; border-radius:12px; padding:12px;
+       margin-bottom:8px; background:#F7FAFD; }
+  .pk .nm{ font-size:16px; font-weight:800; line-height:1.3; }
+  .pk .qt{ font-size:20px; font-weight:900; color:#1F4E78; margin-top:4px; }
+  #periksaTotal{ font-size:15px; font-weight:800; text-align:center;
+                 margin:12px 0 16px; }
+
+  #sDaftar .sb{ font-size:15px; font-weight:700; }
+  #sDaftar{ margin-top:12px; text-align:left; }
+  #sDaftar .sb{ font-size:14px; padding:6px 0; border-bottom:1px solid #e3e8ee; }
+
+  .ringkas{ border:3px solid; border-radius:12px; padding:14px; margin-top:16px; }
+  .ringkas.masuk{ border-color:var(--hijau); background:#EFFaf3; }
+  .ringkas.keluar{ border-color:var(--merah); background:#FEF3F2; }
+  .ringkas .judul{ font-size:12px; font-weight:800; letter-spacing:.06em; }
+  .ringkas.masuk .judul{ color:var(--hijau); } .ringkas.keluar .judul{ color:var(--merah); }
+  .ringkas .baris{ display:flex; justify-content:space-between; gap:10px;
+                   padding:5px 0; font-size:15px; }
+  .ringkas .baris b{ text-align:right; }
+
+  .pesan{ padding:14px; border-radius:10px; font-size:15px; margin-top:12px;
+          font-weight:600; line-height:1.4; }
+  .p-ok{ background:#E4F6EB; color:#0B5130; border:2px solid #9FD9B6; }
+  .p-salah{ background:#FDECEA; color:#7A1710; border:2px solid #F0B4AE; }
+  .p-info{ background:#EAF2FA; color:#123A5C; border:2px solid #B4CFE6; }
+
+  #sukses{ text-align:center; padding:26px 16px; }
+  #sukses .tanda{ font-size:56px; line-height:1; }
+  #sukses .apa{ font-size:20px; font-weight:800; margin:12px 0 4px; }
+  #sukses .det{ color:var(--abu); font-size:15px; }
+
+  .catatan{ font-size:12px; color:var(--abu); text-align:center; margin-top:14px; line-height:1.5; }
+  .x{ display:none !important; }
+
+  /* Layar login. Menutup seluruh halaman supaya tidak ada satu pun
+     tombol input yang bisa ditekan sebelum operator dikenali. */
+  #login{ position:fixed; inset:0; background:#1F4E78; color:#fff; z-index:9999;
+          display:flex; flex-direction:column; justify-content:center;
+          padding:28px; overflow:auto; }
+  #login h1{ font-size:22px; margin:0 0 4px; }
+  #login p.sub{ margin:0 0 24px; opacity:.8; font-size:13px; }
+  #login label{ color:#fff; opacity:.9; }
+  #login input{ font-size:20px; padding:14px; }
+  #login .pesanLogin{ min-height:22px; margin-top:10px; font-size:14px; }
+  #login .pesanLogin.salah{ color:#FFD3D3; }
+  /* Versi ikut ditampilkan SEBELUM login. Kalau hanya ada sesudah login,
+     petugas yang terkunci di layar ini tidak bisa menjawab pertanyaan
+     pertama saat melapor: "versinya berapa?" */
+  #lVersi{ margin-top:26px; font-size:12px; opacity:.75; line-height:1.6; }
+  #keluarAkun{ margin-top:10px; font-size:13px; text-decoration:underline;
+               opacity:.75; cursor:pointer; }
+  /* Dua baris TERPISAH, bukan satu kotak berisi tiga hal:
+     - barisAkun  : identitas + keluar akun (soal siapa yang memakai)
+     - barisData  : perbarui data barang (soal isi aplikasi)
+     Keduanya hanya muncul di halaman utama. Setelah petugas masuk ke
+     alur scan, tombol ini tidak boleh ikut terlihat — satu-satunya
+     tombol yang boleh menarik perhatian di sana adalah tombol transaksi. */
+  #barisAkun, #barisData{ margin:0 auto; padding:9px 12px; max-width:340px;
+              border:1px solid #d6dde6; border-radius:10px; background:#fbfcfe;
+              display:flex; align-items:center; justify-content:space-between;
+              gap:10px; }
+  #barisAkun{ margin-top:18px; margin-bottom:8px; }
+  #barisData{ margin-bottom:6px; justify-content:center; }
+  #siapa{ font-size:13px; color:#1F4E78; font-weight:600; text-align:left;
+          flex:1 1 auto; min-width:100px; }
+  .kecil{ font-size:13px; font-weight:600; padding:7px 12px; border-radius:8px;
+          border:1px solid #1F4E78; background:#fff; color:#1F4E78;
+          cursor:pointer; white-space:nowrap; flex:0 0 auto; }
+  .kecil:active{ background:#eef3f9; }
+  #keluarAkun{ border-color:#B03A2E; color:#B03A2E; }
+  #tSegarkan{ text-decoration:none; }
+</style>
+</head>
+<body>
+
+<!-- ============ ISI DUA BARIS INI ============ -->
+<script>
+  var VERSI = 'v31 · 20 Agu 2026';
+  /* URL DEPLOYMENT AKTIF. Cara memastikannya benar (jangan dilewati):
+     buka URL ini di browser — harus muncul "Versi server: 18.2".
+     Kalau baris versi tidak ada, itu deployment LAMA: semua perbaikan
+     server tidak akan terasa sedikit pun di HP, berapa kali pun
+     Code.gs diperbarui. Ini pernah terjadi dan memakan berhari-hari. */
+  var API   = 'https://script.google.com/macros/s/AKfycbyckLKNanOYO7rdLeySHDG8V2cSI9JSF3NBa-MbeSQ4I84DFWXBrmuS5aw1LlF1_B_4JA/exec';
+  var TOKEN = '1234';
+  /* SUMBER DATA BARANG (jalur utama, tanpa Apps Script).
+     Sheets > File > Bagikan > Publikasikan ke web > pilih sheet MASTER >
+     format CSV > Publikasikan. Tempel URL-nya di bawah.
+     KENAPA ADA: balasan Apps Script SELALU disajikan lewat hop
+     script.googleusercontent.com, dan hop itu terbukti tidak andal di
+     jaringan pabrik (log Eksekusi "Completed" tapi jawabannya tidak
+     pernah sampai — bahkan untuk balasan 100 byte). CSV terbit dilayani
+     docs.google.com sebagai berkas biasa, tanpa hop itu.
+     Kosongkan ('') untuk kembali memakai jalur Apps Script. */
+  var CSV_MASTER = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdOcY9JE5vmnr39ZtoX904Mn4gQtyNUUQ4sO6Qx6OVuX7lg54W0VxOwTHKLqw-Eqlfu0uUYPBmczwj/pub?gid=1523930840&single=true&output=csv';
+</script>
+
+<!-- ============ LAYAR LOGIN ============
+     Ditaruh paling atas dan menutup seluruh layar. Selama sesi belum ada,
+     tidak ada satu pun tombol transaksi yang bisa disentuh. -->
+<div id="login">
+  <h1>Gudang Teknik</h1>
+  <label>Nama</label>
+  <input id="lNama" autocomplete="username" autocapitalize="words">
+  <label>Sandi</label>
+  <input id="lSandi" type="password" inputmode="text" autocomplete="current-password">
+  <button class="besar hijau" id="bLogin">MASUK</button>
+  <div class="pesanLogin" id="lPesan"></div>
+  <div id="lVersi"></div>
+</div>
+
+<div id="status">
+  <div><b id="sSinyal" class="netral">…</b>Koneksi</div>
+  <div><b id="sAntre" class="netral">0</b>Belum terkirim</div>
+  <div><b id="sData" class="netral">…</b>Data barang</div>
+</div>
+
+<!-- LANGKAH 0 : pilih mode -->
+<div id="ingatDaftar" class="x"></div>
+
+<div id="pilihMode">
+  <button id="bMasuk">BARANG<br>MASUK</button>
+  <button id="bKeluar">BARANG<br>KELUAR</button>
+</div>
+
+<!-- kepala saat mode aktif -->
+<div id="kepala" class="x"><span id="kepalaTeks"></span><button id="bGanti">GANTI</button></div>
+
+<div class="isi">
+
+  <!-- LANGKAH 1 : pilih barang -->
+  <div class="kartu x" id="k1">
+    <div class="langkah">LANGKAH 1 — PILIH BARANG</div>
+    <button class="besar" id="bScan">SCAN QR</button>
+    <label>Atau ketik nama / kode barang</label>
+    <input id="q" placeholder="contoh: bearing 6016" autocomplete="off">
+    <div id="reader" class="x"></div>
+    <div class="hasil" id="hasil"></div>
+  </div>
+
+  <!-- LANGKAH 2 : konfirmasi barang hasil scan -->
+  <div class="kartu x" id="kKonfirmasi">
+    <div class="langkah">LANGKAH 2 — PASTIKAN BARANGNYA BENAR</div>
+    <div class="barang">
+      <div class="kode" id="cKode"></div>
+      <div class="nama" id="cNama"></div>
+      <div class="rinci" id="cRinci"></div>
+    </div>
+    <button class="besar hijau" id="bBenar">YA, BARANG INI BENAR</button>
+    <button class="besar abu" id="bSalah">BUKAN — PILIH ULANG</button>
+  </div>
+
+  <!-- LANGKAH 3 : isi jumlah & keterangan -->
+  <div class="kartu x" id="k2">
+    <div class="langkah">LANGKAH 3 — ISI DATA</div>
+
+    <div class="barang">
+      <div class="kode" id="iKode"></div>
+      <div class="nama" id="iNama"></div>
+      <div class="rinci" id="iRinci"></div>
+    </div>
+
+    <label>QTY <i id="lSatuan"></i></label>
+    <input id="qty" type="number" inputmode="decimal" min="0" step="any" placeholder="0">
+
+    <label>User</label>
+    <input id="user" autocomplete="off">
+
+    <div id="grupMasuk">
+      <label>Supplier</label><input id="supplier" autocomplete="off">
+      <label>No PO</label><input id="po" autocomplete="off">
+      <label>No PR</label><input id="pr" autocomplete="off">
+    </div>
+    <div id="grupKeluar" class="x">
+      <label>Unit</label><input id="unit" autocomplete="off">
+      <label>Keperluan</label><input id="keperluan" autocomplete="off">
+      <label>Orang Gudang</label><input id="gudang" autocomplete="off">
+    </div>
+    <label>Lokasi</label><input id="lokasi" autocomplete="off">
+
+    <div class="ringkas" id="ringkas">
+      <div class="judul" id="rJudul"></div>
+      <div class="baris"><span>Barang</span><b id="rNama">-</b></div>
+      <div class="baris"><span>QTY</span><b id="rQty">-</b></div>
+      <div class="baris"><span>User</span><b id="rUser">-</b></div>
+    </div>
+
+    <div id="daftarBarang" class="x"></div>
+
+    <button type="button" class="sekunder" id="bTambahLain">+ TAMBAH BARANG LAIN</button>
+    <button class="besar hijau" id="bSimpan">SIMPAN</button>
+    <button class="besar abu" id="bBatal">BATAL</button>
+  </div>
+
+  <!-- LAYAR DAFTAR : dibuka langsung dari halaman utama.
+       Sebelum ini, satu-satunya cara melihat daftar adalah berpura-pura
+       memasukkan barang lagi — petugas harus mengarang transaksi hanya
+       untuk memeriksa pekerjaannya sendiri. -->
+  <div class="kartu x" id="kDaftar">
+    <div class="langkah">BARANG YANG BELUM DISIMPAN</div>
+    <div id="daftarPenuh"></div>
+    <button type="button" class="sekunder" id="bTambahDariDaftar">+ TAMBAH BARANG LAIN</button>
+    <button class="besar hijau" id="bSimpanDaftar">SIMPAN SEMUA</button>
+    <button class="besar abu" id="bTutupDaftar">KEMBALI</button>
+  </div>
+
+  <!-- KONFIRMASI AKHIR : muncul sesudah SIMPAN, sebelum data benar-benar
+       masuk antrean. Tidak ada tombol UBAH di sini dengan sengaja — layar
+       ini untuk MEMBACA, bukan mengedit. Kalau ada yang salah, petugas
+       menekan BATAL dan kembali ke daftar yang memang punya UBAH/HAPUS.
+       Satu layar, satu pekerjaan. -->
+  <div class="kartu x" id="kPeriksa">
+    <div class="langkah">PERIKSA SEBELUM DISIMPAN</div>
+    <div id="periksaJenis" class="judulDaftar"></div>
+    <div id="periksaIsi"></div>
+    <button class="besar hijau" id="bYaSimpan">YA, SIMPAN</button>
+    <button class="besar abu" id="bBatalSimpan">BATAL &mdash; PERIKSA LAGI</button>
+  </div>
+
+  <!-- LANGKAH 4 : berhasil -->
+  <div class="kartu x" id="k3">
+    <div id="sukses">
+      <div class="tanda" id="sIkon">✓</div>
+      <div class="apa" id="sApa"></div>
+      <div class="det" id="sDet"></div>
+      <div id="sDaftar"></div>
+    </div>
+    <button class="besar" id="bLagi">CATAT BARANG BERIKUTNYA</button>
+  </div>
+
+  <div id="pesan"></div>
+  <!-- Baris akun: identitas + dua tombol kecil. Dipisah dari baris versi
+       karena keduanya punya fungsi berbeda — yang satu dipakai petugas
+       setiap hari, yang satu hanya untuk memastikan versi saat ada masalah. -->
+  <div id="barisAkun">
+    <span id="siapa"></span>
+    <button type="button" class="kecil" id="keluarAkun">Keluar akun</button>
+  </div>
+
+  <div id="barisData">
+    <button type="button" class="kecil" id="tSegarkan">Perbarui data barang</button>
+  </div>
+
+  <div class="catatan">
+    Catatan sementara gudang teknik. SAP tetap catatan resmi.<br>
+    <span id="tVersi" style="opacity:.7"></span><br>
+    <span id="tOffline" style="opacity:.7"></span>
+  </div>
+</div>
+
+<script>
+/* ID transaksi. UUID dipakai supaya dua HP tidak mungkin menghasilkan ID
+   sama — kalau sampai kembar, transaksi kedua akan dianggap kiriman ulang
+   dan dilewati diam-diam. Awalan "t" menandakan asalnya dari HP. */
+function idBaru(){
+  try {
+    if (window.crypto && crypto.randomUUID) return 't' + crypto.randomUUID();
+  } catch(e){}
+  try {
+    var a = new Uint8Array(16);
+    crypto.getRandomValues(a);
+    return 't' + Array.prototype.map.call(a, function(x){
+      return ('0'+x.toString(16)).slice(-2); }).join('');
+  } catch(e){}
+  return 't' + Date.now() + '-' + Math.random().toString(36).slice(2,12);
+}
+
+function bootGagal(t){
+  document.getElementById('pesan').innerHTML =
+    '<div class="pesan p-salah">MASALAH: ' + String(t).replace(/</g,'&lt;') + '</div>';
+}
+window.onerror = function(m,u,b){ bootGagal(m + ' (baris ' + b + ')'); };
+</script>
+
+<script src="html5-qrcode.min.js"
+        onerror="bootGagal('File html5-qrcode.min.js belum diupload ke folder yang sama.')"></script>
+
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+
+var K_MASTER='gt_master', K_ANTRE='gt_antre', K_WAKTU='gt_waktu', K_CAP='gt_cap', K_VSRV='gt_vsrv';
+var K_SESI='gt_sesi', K_NAMA='gt_nama', K_DAFTAR='gt_daftar';
+var daftar = [];   /* barang yang sudah diisi tapi BELUM disimpan */
+var sesi = null, namaOperator = '';
+var mode=null, terpilih=null, scanner=null, kameraJalan=false, jedaCari=null, nomorCari=0;
+var master=null, antre=[], sedangKirim=false;
+
+/* ================= penyimpanan lokal ================= */
+function hapusLokal(k){ try { localStorage.removeItem(k); } catch(e){} }
+function tulisLokal(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+function bacaLokal(k){ try{ var v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){ return null; } }
+function aman(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ================= jaringan ================= */
+function online(){ return navigator.onLine !== false; }
+
+function api(muatan, batasMs, ulang, metode){
+  muatan.token = TOKEN;
+  var sisa = (ulang === undefined) ? 1 : ulang;      // sekali coba ulang otomatis
+  var pakaiGet = (metode === 'GET');
+  function sekali(){
+    var ctrl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+    var jam = ctrl ? setTimeout(function(){ ctrl.abort(); }, batasMs||25000) : null;
+    var janji;
+    if (pakaiGet){
+      /* Jalur cadangan: aksi baca-saja lewat GET biasa (dilayani doGet).
+         Dipakai kalau balasan POST diganti halaman HTML oleh Google. */
+      var q = [];
+      for (var k in muatan) if (muatan[k] !== undefined) q.push(k + '=' + encodeURIComponent(muatan[k]));
+      janji = fetch(API + '?' + q.join('&'), { method:'GET', redirect:'follow',
+          signal: ctrl?ctrl.signal:undefined });
+    } else {
+      janji = fetch(API, { method:'POST', redirect:'follow',
+          headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+          body: JSON.stringify(muatan), signal: ctrl?ctrl.signal:undefined });
+    }
+    return janji
+      .then(function(r){ if(jam) clearTimeout(jam); return r.text(); })
+      .then(function(teks){
+        if (String(teks).trim()===''){ var k=new Error('balasan kosong'); k.ragu=true; throw k; }
+        try { return JSON.parse(teks); }
+        catch(e){
+          var bersih = String(teks).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+          var err;
+          if (bersih.indexOf('ServiceLogin')>-1 || bersih.indexOf('Sign in')>-1)
+            err = new Error('Server minta login. Deployment harus disetel "Anyone".');
+          else err = new Error('Balasan tidak dikenali: ' + bersih.substring(0,150));
+          err.ragu = true; throw err;
+        }
+      });
+  }
+  return sekali().catch(function(e){
+    if (sisa > 0){ return new Promise(function(res){ setTimeout(res, 1500); }).then(sekali); }
+    throw e;
+  });
+}
+
+/* ================= papan status ================= */
+function papan(){
+  var s = $('sSinyal');
+  if (online()){ s.textContent='ONLINE'; s.className='baik'; }
+  else { s.textContent='OFFLINE'; s.className='buruk'; }
+
+  /* Antrean baru dikosongkan setelah BALASAN server sampai, bukan saat
+     barisnya muncul di sheet. Untuk kiriman banyak, server menulis log +
+     kartu stock + saldo dulu, jadi ada jeda beberapa detik di mana datanya
+     sudah terlihat di Sheets tapi HP belum menerima konfirmasi. Tanpa
+     penanda ini, petugas mengira kiriman gagal dan menekan ulang. */
+  var a = $('sAntre');
+  if (sedangKirim){
+    a.textContent = antre.length + ' MENGIRIM…';
+    a.className = 'kirim';
+  } else {
+    a.textContent = antre.length;
+    a.className = antre.length ? 'buruk' : 'baik';
+  }
+
+  var d = $('sData'), w = bacaLokal(K_WAKTU);
+  if (!master){ d.textContent='BELUM'; d.className='buruk'; }
+  else {
+    var hari = w ? Math.floor((Date.now()-w)/86400000) : 0;
+    d.textContent = hari===0 ? 'HARI INI' : hari+' HARI';
+    d.className = hari>30 ? 'buruk' : 'baik';
+  }
+}
+window.addEventListener('online',  function(){ jedaUlang = 5000; papan(); kirimAntre(); });
+window.addEventListener('offline', papan);
+
+function pesan(t, jenis){
+  $('pesan').innerHTML = '<div class="pesan p-'+jenis+'">'+aman(t)+'</div>';
+}
+
+/* ================= data master di HP ================= */
+/* paksa = true berarti diminta petugas lewat "Perbarui data barang".
+   Hanya saat itu prosesnya diberi pesan; unduhan otomatis berjalan diam-diam
+   supaya layar awal tidak membingungkan. Status tetap terlihat di papan atas. */
+
+/* ================= pembaca CSV ================= */
+/* CSV betulan: nilai boleh mengandung koma, tanda kutip, dan baris baru
+   asalkan dibungkus kutip ganda ("" = satu kutip). Deskripsi barang di
+   MASTER mengandung koma, jadi pemisahan asal-asalan pakai split(',')
+   akan menggeser kolom dan merusak seluruh data. */
+function uraiCsv(teks){
+  var baris = [], sel = [], nilai = '', dalamKutip = false;
+  teks = String(teks).replace(/^\uFEFF/, '');        // buang BOM
+  for (var i = 0; i < teks.length; i++){
+    var c = teks[i];
+    if (dalamKutip){
+      if (c === '"'){
+        if (teks[i+1] === '"'){ nilai += '"'; i++; }
+        else dalamKutip = false;
+      } else nilai += c;
+      continue;
+    }
+    if (c === '"'){ dalamKutip = true; continue; }
+    if (c === ','){ sel.push(nilai); nilai = ''; continue; }
+    if (c === '\r'){ continue; }
+    if (c === '\n'){ sel.push(nilai); baris.push(sel); sel = []; nilai = ''; continue; }
+    nilai += c;
+  }
+  if (nilai !== '' || sel.length){ sel.push(nilai); baris.push(sel); }
+  return baris;
+}
+
+/* Pemetaan kolom PERSIS seperti _kolMaster di Code.gs: dicari lewat JUDUL
+   baris 1 (bukan posisi), nama dinormalkan huruf kecil + spasi rapat. */
+function petaKolomCsv(judul){
+  function norm(t){ return String(t).toLowerCase().replace(/\s+/g,' ').trim(); }
+  var J = judul.map(norm);
+  function cari(nama){ var i = J.indexOf(norm(nama)); return i < 0 ? 0 : i + 1; }
+  var perGudang = [];
+  J.forEach(function(j, i){
+    if (j.indexOf('stok ') === 0 && j !== 'stok sap' && j !== 'stok')
+      perGudang.push({ nama: j.substring(5).toUpperCase(), kol: i + 1 });
+  });
+  return {
+    kode: cari('Kode Material'),
+    desc: cari('Deskripsi'),
+    uom:  cari('UOM'),
+    tot:  cari('Total Stok') || cari('Stok SAP'),
+    ada:  cari('Ada di Gudang') || cari('Gudang'),
+    rak:  cari('Lokasi Rak'),
+    perGudang: perGudang
+  };
+}
+
+/* CSV -> bentuk yang dipakai aplikasi: [kode, deskripsi, uom, stok,
+   gudang, rak] — sama persis dengan keluaran masterRingkas, jadi sisa
+   aplikasi (cari, scan, layar konfirmasi) tidak perlu diubah. */
+function csvKeMaster(teks){
+  var baris = uraiCsv(teks);
+  if (baris.length < 2) throw new Error('CSV kosong atau hanya berisi judul');
+  var K = petaKolomCsv(baris[0]);
+  if (!K.kode || !K.desc) throw new Error('Judul "Kode Material"/"Deskripsi" tidak ketemu di CSV');
+  var keluar = [];
+  for (var r = 1; r < baris.length; r++){
+    var v = baris[r];
+    var kode = String(v[K.kode - 1] === undefined ? '' : v[K.kode - 1]).trim();
+    if (!kode) continue;
+    var rinci = [];
+    for (var g = 0; g < K.perGudang.length; g++){
+      var n = Number(v[K.perGudang[g].kol - 1]) || 0;
+      if (n > 0) rinci.push(K.perGudang[g].nama + ':' + n);
+    }
+    keluar.push([
+      kode,
+      String(v[K.desc - 1] || ''),
+      String(K.uom ? (v[K.uom - 1] || '') : ''),
+      K.tot ? (v[K.tot - 1] === undefined ? '' : v[K.tot - 1]) : '',
+      rinci.length ? rinci.join(' | ') : String(K.ada ? (v[K.ada - 1] || '') : ''),
+      String(K.rak ? (v[K.rak - 1] || '') : '')
+    ]);
+  }
+  if (!keluar.length) throw new Error('CSV tidak berisi satu pun kode material');
+  return keluar;
+}
+
+/* Unduhan CSV: SATU permintaan biasa ke docs.google.com. Tidak lewat
+   ContentService, tidak lewat URL sekali-pakai googleusercontent, tidak
+   kena batas eksekusi Apps Script. Diulang beberapa kali kalau jaringan
+   sedang sekarat. */
+function unduhCsv(paksa){
+  var CUBA = 3;
+  function sekali(sisa, jeda){
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var jam = ctrl ? setTimeout(function(){ ctrl.abort(); }, 90000) : null;
+    /* Penanda waktu memaksa unduhan segar, bukan salinan lama browser. */
+    var pemisah = CSV_MASTER.indexOf('?') > -1 ? '&' : '?';
+    return fetch(CSV_MASTER + pemisah + '_t=' + Date.now(),
+                 { redirect:'follow', signal: ctrl ? ctrl.signal : undefined })
+      .then(function(r){ if (jam) clearTimeout(jam); return r.text(); })
+      .then(function(teks){
+        if (String(teks).trim().charAt(0) === '<')
+          throw new Error('CSV dibalas halaman HTML — cek URL "Publikasikan ke web"');
+        return csvKeMaster(teks);
+      })
+      .catch(function(e){
+        if (sisa <= 0) throw e;
+        if (paksa) pesan('Unduhan tersendat, mengulang…', 'info');
+        return new Promise(function(res){ setTimeout(res, jeda); })
+          .then(function(){ return sekali(sisa - 1, Math.min(jeda * 2, 8000)); });
+      });
+  }
+  if (paksa) pesan('Mengunduh data barang…', 'info');
+  return sekali(CUBA, 1500);
+}
+
+/* Unduhan penuh 11.255 barang berukuran ~0,8MB dan itu bagian paling
+   lambat di seluruh aplikasi. Padahal MASTER jarang berubah — sering kali
+   unduhan itu menghasilkan data yang sama persis. Karena itu ditanya dulu
+   SIDIK JARI-nya (~50 byte); unduhan penuh hanya kalau capnya berbeda. */
+function muatMaster(paksa){
+  var lokal = bacaLokal(K_MASTER);
+  if (lokal && lokal.length && !paksa){ master = lokal; papan(); return; }
+  if (!online()){ if (paksa) pesan('Tidak ada sinyal. Data barang belum bisa diunduh.', 'salah'); return; }
+
+  if (paksa){ $('sData').textContent='…'; pesan('Memeriksa data barang…', 'info'); }
+
+  /* JALUR UTAMA: CSV terbit dari Google Sheets, kalau URL-nya diisi.
+     Jalur Apps Script tetap ada sebagai cadangan — sengaja, supaya sistem
+     tidak bergantung pada satu jalur saja. */
+  if (CSV_MASTER){
+    unduhCsv(paksa).then(function(data){
+      master = data;
+      if (tulisLokal(K_MASTER, master)) tulisLokal(K_WAKTU, Date.now());
+      tulisLokal(K_CAP, 'csv' + data.length);
+      papan();
+      if (paksa) pesan(data.length + ' barang tersimpan di HP.', 'ok');
+    }).catch(function(e){
+      if (paksa) pesan('CSV gagal (' + e.message + '). Mencoba jalur cadangan…', 'info');
+      lewatApps(paksa);
+    });
+    return;
+  }
+  lewatApps(paksa);
+}
+
+/* Jalur cadangan lewat Apps Script (mesin adaptif POST/GET + ukuran). */
+function lewatApps(paksa){
+  var lokal = bacaLokal(K_MASTER);
+
+  /* MESIN UNDUH ADAPTIF. Riwayat kegagalan di lapangan: balasan 'sidik'
+     (~50B) dan 'banyak' (kecil) SELALU lolos, tapi balasan 'master'
+     (~66KB) kadang diganti Google dengan halaman HTML (ppConfig /
+     "Balasan tidak dikenali") — konsisten di jaringan yang YouTube-nya
+     lancar. Karena mekanisme pastinya di sisi Google, aplikasi tidak
+     menebak: dia MENYESUAIKAN DIRI, dua sumbu:
+
+     1. TRANSPORT. Mulai dari POST. Kalau sebuah percobaan gagal dengan
+        balasan HTML/kosong (err.ragu), percobaan berikutnya memakai GET
+        (dilayani doGet server ≥18.2). Begitu satu transport berhasil,
+        dia jadi pilihan utama unduhan ini (lengket).
+     2. UKURAN. Kalau satu halaman tetap dibalas HTML di kedua transport,
+        seluruh unduhan diulang dengan halaman SETENGAHNYA:
+        750 → 375 → 187 → 93 → 46 barang/halaman (~66→33→17→8→4KB).
+        Lantai 46 sekelas dengan balasan 'banyak' yang terbukti lolos.
+
+     Halaman diminta paralel 4 pekerja (di bawah batas 30 eksekusi
+     serentak Apps Script; HP lain mungkin sedang mengirim transaksi),
+     hasil disimpan per NOMOR halaman lalu dirangkai urut. Kegagalan
+     jaringan biasa (timeout/putus) diulang di transport yang sama,
+     sampai 4 percobaan per halaman dengan jeda memanjang. */
+  function tidur(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+  var PARALEL = 4;
+  var PER_AWAL = 750, PER_MIN = 46;
+
+  function unduhPenuh(){
+    var transport = 'POST';            // lengket setelah ada yang berhasil
+
+    function ambil(n, per, sisaCoba, jeda){
+      var pakai = transport;
+      var raguDi = {};   // transport mana saja yang membalas HTML utk halaman ini
+      function coba(sisa, jeda, pakai){
+        return api({ aksi:'master', halaman:n, per:per }, 60000, 0, pakai)
+          .then(function(r){
+            if (!r || !r.ok) throw new Error((r&&r.pesan) || 'gagal');
+            transport = pakai;         // yang barusan berhasil jadi pilihan utama
+            return r;
+          })
+          .catch(function(e){
+            if (e.ragu) raguDi[pakai] = true;
+            /* HTML di POST DAN GET untuk halaman yang sama berarti balasan
+               seukuran ini memang ditolak — retry hanya buang waktu.
+               Langsung naikkan supaya jalankan() mengecilkan halaman. */
+            if (e.ragu && raguDi.POST && raguDi.GET){ e.halaman = n; throw e; }
+            if (sisa <= 0){ e.halaman = n; throw e; }
+            /* Balasan HTML/kosong -> ganti transport (tanpa menunggu lama);
+               gagal jaringan biasa -> transport tetap, jeda memanjang. */
+            var berikutnya = e.ragu ? (pakai === 'POST' ? 'GET' : 'POST') : pakai;
+            var jedaIni    = e.ragu ? 250 : jeda;
+            if (paksa) pesan('Sinyal tersendat, mengulang bagian ' + (n+1) + '…', 'info');
+            return tidur(jedaIni).then(function(){
+              return coba(sisa - 1, Math.min(jeda * 2, 8000), berikutnya);
+            });
+          });
+      }
+      return coba(sisaCoba, jeda, pakai);
+    }
+
+    /* Satu putaran unduhan penuh pada ukuran halaman tertentu. */
+    function unduhDengan(per){
+      var potongan = [], capBaru = '', vServer = '', banyak = 1, selesai = 0;
+
+      function catat(n, r){
+        potongan[n] = r.data || [];
+        if (r.cap) capBaru = String(r.cap);
+        if (r.v)   vServer = String(r.v);
+        selesai++;
+        if (paksa){
+          var persen = Math.round((selesai / banyak) * 100);
+          pesan('Mengunduh data barang… ' + persen + '% (bagian ' +
+                selesai + ' dari ' + banyak + ')', 'info');
+        }
+      }
+
+      return ambil(0, per, 4, 1200).then(function(r0){
+        banyak = r0.banyakHalaman || 1;
+        catat(0, r0);
+        if (banyak <= 1) return;
+        var berikut = 1;
+        function pekerja(){
+          if (berikut >= banyak) return Promise.resolve();
+          var n = berikut++;
+          return ambil(n, per, 4, 1200)
+            .then(function(r){ catat(n, r); })
+            .then(pekerja);
+        }
+        var tim = [];
+        for (var w = 0; w < PARALEL && w < banyak - 1; w++) tim.push(pekerja());
+        return Promise.all(tim);
+      }).then(function(){
+        var kumpul = [];
+        for (var i = 0; i < banyak; i++){
+          if (!potongan[i]) throw new Error('bagian ' + (i+1) + ' tidak lengkap');
+          kumpul = kumpul.concat(potongan[i]);
+        }
+        if (!kumpul.length) throw new Error('data kosong');
+        return { data: kumpul, cap: capBaru, v: vServer };
+      });
+    }
+
+    function jalankan(per){
+      if (paksa) pesan('Mengunduh data barang…' +
+                       (per < PER_AWAL ? ' (potongan ' + per + ' barang)' : ''), 'info');
+      return unduhDengan(per).catch(function(e){
+        /* Balasan HTML di kedua transport DAN masih bisa diperkecil ->
+           ulangi seluruh unduhan dengan halaman setengahnya. Server lama
+           (tanpa dukungan 'per') mengabaikan ukuran, jadi pengecilan tidak
+           akan menolong di sana — tapi juga tidak merusak apa pun. */
+        if (e && e.ragu && per > PER_MIN){
+          var kecil = Math.max(PER_MIN, Math.floor(per / 2));
+          if (paksa) pesan('Balasan besar ditolak jaringan/Google. ' +
+                           'Mencoba potongan lebih kecil (' + kecil + ' barang)…', 'info');
+          return jalankan(kecil);
+        }
+        throw e;
+      });
+    }
+
+    return jalankan(PER_AWAL).then(function(hasil){
+      master = hasil.data;
+      if (tulisLokal(K_MASTER, master)) tulisLokal(K_WAKTU, Date.now());
+      if (hasil.cap) tulisLokal(K_CAP, hasil.cap);
+      if (hasil.v){ tulisLokal(K_VSRV, hasil.v); tulisVersi(); }
+      papan();
+      if (paksa) pesan(hasil.data.length + ' barang tersimpan di HP.', 'ok');
+    });
+  }
+
+  /* Sidik jari gagal bukan alasan berhenti — lanjut saja ke unduhan penuh. */
+  api({ aksi:'sidik' }, 20000, 1).then(function(r){
+    if (r && r.v){ tulisLokal(K_VSRV, String(r.v)); tulisVersi(); }
+    var cap = r && r.cap ? String(r.cap) : '';
+    if (cap && lokal && lokal.length && cap === bacaLokal(K_CAP)){
+      master = lokal;
+      tulisLokal(K_WAKTU, Date.now());
+      papan();
+      if (paksa) pesan('Data barang sudah yang terbaru. Tidak perlu diunduh ulang.', 'ok');
+      return;
+    }
+    return unduhPenuh();
+  }, function(){
+    return unduhPenuh();
+  }).catch(function(e){
+    papan();
+    if (paksa){
+      var t = 'Gagal memperbarui data barang: ' + e.message;
+      if (!bacaLokal(K_VSRV))
+        t += ' — Belum ada tanda versi server. Kemungkinan HP masih terhubung ' +
+             'ke deployment LAMA: cek URL API di aplikasi vs Manage deployments.';
+      pesan(t, 'salah');
+    }
+  });
+}
+
+/* ================= login operator =================
+   KENAPA ADA: sebelum ini penjaganya cuma token bersama di dalam berkas
+   halaman — bisa dibaca siapa saja yang membuka sumber halaman, dan
+   tidak ada catatan siapa memasukkan apa.
+
+   YANG PENTING DIPAHAMI: nama yang masuk ke sheet TIDAK diambil dari
+   kotak isian mana pun di aplikasi ini. Server membacanya dari tanda
+   tangan sesi. Aplikasi tidak punya cara mengarang nama operator.
+
+   Sesi TIDAK diberi masa berlaku. Ini disengaja: aplikasi ini dipakai
+   di gudang tanpa sinyal, dan sesi yang kedaluwarsa berarti operator
+   tidak bisa bekerja sama sekali sampai dapat sinyal. Jalan keluarnya
+   bukan waktu, melainkan tombol "Keluar akun" dan menu "Keluarkan
+   SEMUA akun" di sheet untuk HP yang hilang. */
+
+function tampilLogin(tampil){
+  $('login').style.display = tampil ? 'flex' : 'none';
+  if (tampil) setTimeout(function(){ $('lNama').focus(); }, 100);
+}
+
+function tulisSiapa(){
+  $('siapa').textContent = namaOperator ? ('Masuk sebagai: ' + namaOperator) : '';
+  aturBarisBawah();
+}
+
+/* Dua baris bawah hanya muncul di halaman utama (pilih MASUK/KELUAR) dan
+   hanya kalau sudah login. Di tengah alur scan keduanya disembunyikan:
+   tombol "Keluar akun" yang terlihat saat petugas sedang mengisi jumlah
+   adalah undangan salah pencet. */
+var langkahSekarang = 0;
+function aturBarisBawah(){
+  var tampak = (langkahSekarang === 0) && !!namaOperator;
+  $('barisAkun').style.display = tampak ? 'flex' : 'none';
+  $('barisData').style.display = tampak ? 'flex' : 'none';
+}
+
+function pesanLogin(t, salah){
+  var el = $('lPesan');
+  el.textContent = t || '';
+  el.className = 'pesanLogin' + (salah ? ' salah' : '');
+}
+
+function login(){
+  var n = $('lNama').value.trim(), s = $('lSandi').value;
+  if (!n || !s){ pesanLogin('Nama dan sandi harus diisi.', true); return; }
+  if (!online()){ pesanLogin('Login pertama butuh sinyal. Cari tempat bersinyal dulu.', true); return; }
+
+  $('bLogin').disabled = true;
+  pesanLogin('Memeriksa…', false);
+  api({ aksi:'login', nama:n, sandi:s }, 30000, 1).then(function(r){
+    $('bLogin').disabled = false;
+    if (!r || !r.ok){ pesanLogin((r && r.pesan) || 'Login gagal.', true); return; }
+    sesi = r.sesi; namaOperator = r.nama;
+    tulisLokal(K_SESI, sesi); tulisLokal(K_NAMA, namaOperator);
+    if (r.v){ tulisLokal(K_VSRV, String(r.v)); tulisVersi(); }
+    $('lSandi').value = ''; pesanLogin('', false);
+    tulisSiapa(); tampilLogin(false);
+    if (!master) muatMaster(false);
+    kirimAntre();
+  }).catch(function(){
+    $('bLogin').disabled = false;
+    pesanLogin('Tidak bisa menghubungi server. Periksa sinyal, lalu coba lagi.', true);
+  });
+}
+
+/* Keluar akun. Dua pengaman:
+   1. Konfirmasi, supaya tidak salah pencet.
+   2. Peringatan tegas kalau antrean belum kosong. Antrean terkunci di HP
+      ini; kalau operator berikutnya login, transaksi lama TETAP terkirim
+      atas nama pemiliknya (namanya sudah tercap di dalam antrean), tapi
+      aturan gudang tetap: angka merah nol sebelum pulang. */
+function keluar(){
+  /* Daftar milik orang yang sedang login. Membiarkannya untuk operator
+     berikutnya adalah cara paling rapi mencatat barang atas nama orang
+     yang salah. */
+  if (daftar.length){
+    if (!confirm('MASIH ADA ' + daftar.length + ' barang yang BELUM DISIMPAN.\n\n' +
+                 'Kalau Anda keluar sekarang, barang itu DIHAPUS dan harus ' +
+                 'diisi ulang.\n\nTekan Batal, lalu tekan SIMPAN dulu.\n\n' +
+                 'Tetap keluar dan hapus?')) return;
+    daftar = []; simpanDaftar(); gambarDaftar();
+  }
+  if (antre.length){
+    if (!confirm('MASIH ADA ' + antre.length + ' transaksi yang belum terkirim.\n\n' +
+                 'Transaksi itu tetap tersimpan di HP ini dan tetap tercatat atas ' +
+                 'nama Anda, tapi baru terkirim setelah ada sinyal.\n\n' +
+                 'Tetap keluar sekarang?')) return;
+  } else {
+    if (!confirm('Keluar akun?\n\nOperator berikutnya harus login dengan nama dan ' +
+                 'sandinya sendiri.')) return;
+  }
+  sesi = null; namaOperator = '';
+  hapusLokal(K_SESI); hapusLokal(K_NAMA);
+  tulisSiapa(); keAwal(); tampilLogin(true);
+}
+
+/* ================= daftar barang belum disimpan =================
+   KENAPA ADA: satu surat jalan berisi banyak baris barang. Alur lama
+   memaksa mengetik ulang Supplier/No PO/No PR untuk setiap baris dari
+   dokumen yang SAMA — pekerjaan sia-sia, sekaligus sumber kesalahan yang
+   memecah satu surat jalan jadi beberapa nomor PO di sheet.
+
+   RISIKO YANG DIBAWA FITUR INI, dan cara menutupnya:
+   Dulu setiap transaksi langsung masuk antrean saat SIMPAN — HP mati,
+   paling banyak satu transaksi hilang. Sekarang beberapa barang duduk di
+   layar sebelum disimpan. Karena itu daftar ini DITULIS KE HP setiap kali
+   berubah: aplikasi ditutup, HP restart, baterai habis — isinya tetap ada.
+   Dan selama daftar belum kosong, halaman utama menampilkan peringatan
+   merah besar, sejajar dengan aturan angka merah harus nol.
+
+   ALUR SATU BARANG TIDAK BERUBAH SAMA SEKALI: daftar kosong -> tidak ada
+   yang tampil -> scan, pastikan, isi jumlah, SIMPAN. Jumlah ketukan sama
+   persis seperti sebelum fitur ini ada. */
+
+function simpanDaftar(){ tulisLokal(K_DAFTAR, daftar); ingatDaftar(); }
+
+function ingatDaftar(){
+  var n = daftar.length;
+  var el = $('ingatDaftar');
+  if (!n){ el.className = 'x'; el.innerHTML = ''; return; }
+  el.className = '';
+  el.innerHTML = n + ' BARANG BELUM DISIMPAN' +
+    '<small>' + (daftar[0].jenis === 'masuk' ? 'Barang masuk' : 'Barang keluar') +
+    '. Jangan pulang sebelum tulisan ini hilang.</small>' +
+    '<b class="buka">LIHAT</b>';
+}
+
+/* Ringkasan satu baris untuk ditampilkan ke petugas. */
+/* master adalah ARRAY baris [kode, nama, uom, ...], bukan objek berkunci
+   kode — pencariannya WAJIB lewat cariLokal(). */
+function teksBarang(d){
+  var m = cariLokal(d.kode);
+  return m ? m[1] : d.kode;
+}
+function teksQty(d){
+  var m = cariLokal(d.kode);
+  return d.qty + ' ' + (m ? m[2] : '');
+}
+
+function gambarDaftar(){
+  /* Digambar ke DUA tempat: sisipan di layar isi data, dan layar daftar
+     tersendiri yang dibuka dari halaman utama. Satu sumber HTML, supaya
+     keduanya tidak pernah berbeda isi. */
+  var kotak = $('daftarBarang');
+  if (!daftar.length){
+    kotak.className = 'x'; kotak.innerHTML = '';
+    $('daftarPenuh').innerHTML = '<div class="qt">Tidak ada barang di daftar.</div>';
+    return;
+  }
+  kotak.className = '';
+
+  var html = '<div class="judulDaftar">BARANG YANG AKAN DISIMPAN (' + daftar.length + ')</div>';
+  for (var i = 0; i < daftar.length; i++){
+    var d = daftar[i];
+    /* Barang yang sama muncul dua kali: DITANDAI, tidak ditanyakan.
+       Pertanyaan tiba-tiba dengan dua pilihan yang sama-sama terdengar
+       benar akan dijawab asal supaya cepat hilang. Melihat lebih mudah
+       daripada memutuskan. */
+    var ganda = false;
+    for (var j = 0; j < daftar.length; j++){ if (j !== i && daftar[j].kode === d.kode){ ganda = true; break; } }
+    html += '<div class="brs' + (ganda ? ' ganda' : '') + '">' +
+              '<div class="nm">' + aman(teksBarang(d)) + '</div>' +
+              '<div class="qt">' + aman(teksQty(d)) +
+                (d.lokasi ? ' &middot; lokasi ' + aman(d.lokasi) : '') + '</div>' +
+              (ganda ? '<div class="ganda-cat">Barang ini ada dua kali di daftar</div>' : '') +
+              '<div class="aksi">' +
+                '<button type="button" data-ubah="' + i + '">UBAH</button>' +
+                '<button type="button" class="hps" data-hapus="' + i + '">HAPUS</button>' +
+              '</div>' +
+            '</div>';
+  }
+  kotak.innerHTML = html;
+  $('daftarPenuh').innerHTML = html;
+
+  [kotak, $('daftarPenuh')].forEach(function(wadah){
+    var tb = wadah.querySelectorAll('button');
+    for (var k = 0; k < tb.length; k++){
+      tb[k].addEventListener('click', function(e){
+        var u = e.currentTarget.getAttribute('data-ubah');
+        if (u !== null) ubahBaris(Number(u));
+        else hapusBaris(Number(e.currentTarget.getAttribute('data-hapus')));
+      });
+    }
+  });
+}
+
+/* Buka daftar langsung dari halaman utama. Mode ikut disetel dari isi
+   daftar, karena SIMPAN perlu tahu ini barang masuk atau keluar. */
+function bukaDaftar(){
+  if (!daftar.length) return;
+  mode = daftar[0].jenis;
+  $('kepalaTeks').textContent = (mode === 'masuk') ? 'BARANG MASUK' : 'BARANG KELUAR';
+  $('grupMasuk').className  = (mode === 'masuk') ? '' : 'x';
+  $('grupKeluar').className = (mode === 'keluar') ? '' : 'x';
+  gambarDaftar();
+  $('pesan').innerHTML = '';
+  tampilkan(4);
+}
+
+/* Kumpulkan isian layar jadi satu transaksi. null kalau belum lengkap. */
+function ambilIsian(diam){
+  var q = Number($('qty').value), u = $('user').value.trim();
+  if (!terpilih){ if (!diam) pesan('Barang belum dipilih.', 'salah'); return null; }
+  $('qty').className = (q>0) ? '' : 'salah';
+  $('user').className = u ? '' : 'salah';
+  if (!(q>0)){ if (!diam){ pesan('Jumlah belum diisi atau nol. Periksa kotak merah.', 'salah'); $('qty').focus(); } return null; }
+  if (!u){ if (!diam){ pesan('Nama User belum diisi. Periksa kotak merah.', 'salah'); $('user').focus(); } return null; }
+
+  var d = { id:idBaru(), jenis:mode,
+            kode:terpilih.kode, qty:q, user:u, lokasi:$('lokasi').value.trim() };
+  if (mode==='masuk'){ d.supplier=$('supplier').value.trim(); d.po=$('po').value.trim();
+                       d.pr=$('pr').value.trim(); }
+  else { d.unit=$('unit').value.trim(); d.keperluan=$('keperluan').value.trim();
+         d.gudang=$('gudang').value.trim(); }
+  return d;
+}
+
+/* Kosongkan HANYA bagian barang. Isian dokumen (Supplier/No PO/No PR, atau
+   Unit/Keperluan/Orang Gudang/User) sengaja DIBIARKAN: itu milik satu surat
+   jalan yang sama, dan mengetiknya ulang tiap baris adalah sumber kesalahan
+   yang memecah satu dokumen jadi beberapa nomor di sheet. */
+function bersihkanBarangSaja(){
+  ['qty','lokasi'].forEach(function(id){ $(id).value=''; });
+  ['qty','user'].forEach(function(id){ $(id).className=''; });
+  terpilih = null;
+  perbaruiRingkas();
+}
+
+function tambahBarangLain(){
+  var d = ambilIsian(false);
+  if (!d) return;
+  /* Barang yang sama sudah ada di daftar: diberitahukan SEKARANG, di layar
+     ini juga. Penanda kuning di daftar baru terlihat pada layar berikutnya,
+     dan pada saat itu petugas sudah lupa. Tetap bukan dialog — hanya kalimat
+     yang bisa dibaca, tanpa keputusan yang harus diambil. */
+  var sudahAda = false;
+  for (var i = 0; i < daftar.length; i++) if (daftar[i].kode === d.kode){ sudahAda = true; break; }
+
+  daftar.push(d); simpanDaftar(); gambarDaftar();
+  bersihkanBarangSaja();
+  $('q').value=''; $('hasil').innerHTML='';
+  pesan('Sudah ditambahkan: ' + teksBarang(d) + ' ' + teksQty(d) +
+        (sudahAda ? '. PERHATIAN: barang ini sekarang ada DUA KALI di daftar.'
+                  : '. Sekarang pilih barang berikutnya.'),
+        sudahAda ? 'salah' : 'baik');
+  tampilkan(1);
+}
+
+/* UBAH tidak pernah membuang isian yang sedang di layar: kalau layarnya
+   sudah terisi lengkap, isian itu dimasukkan ke daftar DULU, baru baris
+   yang dipilih dibuka. Tanpa aturan ini, menekan UBAH bisa menghapus
+   pekerjaan yang belum tersimpan — tanpa peringatan. */
+function ubahBaris(i){
+  var d = daftar[i];
+  if (!d) return;
+  var sedang = ambilIsian(true);
+  daftar.splice(i, 1);
+  if (sedang) daftar.push(sedang);
+  simpanDaftar();
+
+  var m = cariLokal(d.kode);
+  terpilih = m ? { kode:m[0], nama:m[1], uom:m[2], stok:m[3], gudang:m[4], rak:m[5] }
+               : { kode:d.kode, nama:d.kode, uom:'' };
+  $('iKode').textContent = terpilih.kode;
+  $('iNama').textContent = terpilih.nama;
+  $('iRinci').textContent = terpilih.uom ? ('UOM ' + terpilih.uom) : '';
+  $('lSatuan').textContent = terpilih.uom ? ('(' + terpilih.uom + ')') : '';
+  $('qty').value = d.qty;
+  $('user').value = d.user || '';
+  $('lokasi').value = d.lokasi || '';
+  if (d.jenis === 'masuk'){ $('supplier').value=d.supplier||''; $('po').value=d.po||''; $('pr').value=d.pr||''; }
+  else { $('unit').value=d.unit||''; $('keperluan').value=d.keperluan||''; $('gudang').value=d.gudang||''; }
+  perbaruiRingkas(); gambarDaftar();
+  pesan('Silakan perbaiki, lalu tekan SIMPAN atau TAMBAH BARANG LAIN.', 'baik');
+  tampilkan(2);
+}
+
+function hapusBaris(i){
+  var d = daftar[i];
+  if (!d) return;
+  if (!confirm('Hapus ' + teksBarang(d) + ' ' + teksQty(d) + ' dari daftar?')) return;
+  daftar.splice(i, 1); simpanDaftar(); gambarDaftar();
+  pesan('Sudah dihapus dari daftar.', 'baik');
+}
+
+/* ================= antrean transaksi ================= */
+/* Pengiriman dipicu oleh EMPAT hal, bukan hanya timer:
+   1. begitu transaksi disimpan
+   2. begitu HP mendeteksi koneksi kembali
+   3. begitu aplikasi dibuka lagi / layar dinyalakan
+   4. timer cadangan, dengan jeda yang memendek saat gagal
+   Pemicu 3 penting karena WiFi yang tersambung tapi tanpa internet
+   tetap dianggap "online" oleh HP, sehingga pemicu 2 tidak menyala. */
+
+var jedaUlang = 5000;          // mulai 5 detik
+var JEDA_MAKS = 60000;
+var jamUlang = null;
+
+function jadwalkan(ms){
+  clearTimeout(jamUlang);
+  if (!antre.length) return;
+  jamUlang = setTimeout(kirimAntre, ms);
+}
+
+function kirimAntre(){
+  if (sedangKirim || !antre.length) return;
+  if (!online()){ jadwalkan(jedaUlang); return; }
+
+  sedangKirim = true;
+  papan();                               // tampilkan "MENGIRIM…" sejak awal
+  /* Server kini menulis per BLOK, bukan satu per satu, sehingga 20
+     transaksi selesai jauh lebih cepat daripada versi sebelumnya. */
+  var kirim = antre.slice(0, 20);
+
+  api({ aksi:'banyak', daftar:kirim, sesi:sesi }, 90000, 1).then(function(r){
+    sedangKirim = false;
+    /* Sesi ditolak server (mis. "Keluarkan SEMUA akun" ditekan).
+       Antrean TIDAK dibuang — hanya tertahan sampai login ulang. */
+    if (r && r.perluLogin){
+      pesan((r.pesan || 'Sesi tidak berlaku lagi.') + ' Antrean aman, tidak ada yang hilang.', 'salah');
+      tampilLogin(true);
+      jadwalkan(JEDA_MAKS);
+      return;
+    }
+    if (!r || !r.ok) throw new Error('ditolak server');
+    var sukses = {};
+    (r.hasil||[]).forEach(function(h){ if (h.ok) sukses[h.id] = 1; });
+    var adaSukses = Object.keys(sukses).length > 0;
+    antre = antre.filter(function(x){ return !sukses[x.id]; });
+    tulisLokal(K_ANTRE, antre);
+    papan();
+    /* Lanjut cepat (300ms) HANYA kalau batch ini benar-benar maju.
+       Kalau tidak satu pun sukses (semua item ditolak server), lanjut
+       cepat berarti menembaki server 3x per detik dengan kiriman yang
+       sama — mundur dengan jeda memanjang, sama seperti gagal jaringan. */
+    if (adaSukses){
+      jedaUlang = 5000;                  // berhasil, kembalikan ke jeda awal
+      if (antre.length) jadwalkan(300);  // masih ada sisa, lanjut cepat
+    } else {
+      jadwalkan(jedaUlang);
+      jedaUlang = Math.min(jedaUlang * 2, JEDA_MAKS);
+    }
+  }).catch(function(){
+    sedangKirim = false;
+    papan();
+    /* Gagal: coba lagi makin jarang, supaya tidak membebani saat sinyal buruk. */
+    jadwalkan(jedaUlang);
+    jedaUlang = Math.min(jedaUlang * 2, JEDA_MAKS);
+  });
+}
+
+/* Aplikasi dibuka lagi atau layar dinyalakan -> langsung coba kirim. */
+document.addEventListener('visibilitychange', function(){
+  /* Aplikasi ditinggal ke belakang (tombol Home, telepon masuk, pindah
+     aplikasi): kamera dimatikan. Browser tidak selalu melakukannya
+     sendiri — di sebagian HP lampu kamera tetap menyala dan baterai
+     terkuras tanpa sebab yang terlihat petugas. Kembali ke aplikasi,
+     tinggal tekan SCAN QR lagi. */
+  if (document.hidden){ try { hentikanKamera(); } catch (e) {} return; }
+  if (!document.hidden){ jedaUlang = 5000; papan(); kirimAntre(); }
+});
+window.addEventListener('focus', function(){ jedaUlang = 5000; kirimAntre(); });
+
+/* Jaring pengaman terakhir. */
+setInterval(function(){ if (antre.length && !sedangKirim) kirimAntre(); }, 15000);
+
+/* ================= alur layar ================= */
+/* ================= tombol BACK di HP =================
+   Aplikasi ini satu halaman: semua layar hanya kartu yang disembunyikan
+   dan ditampilkan, jadi bagi browser tidak pernah terjadi perpindahan
+   halaman. Akibatnya tombol back HP langsung KELUAR dari aplikasi, di
+   layar mana pun petugas berada — termasuk saat sedang mengisi jumlah.
+
+   Solusinya: setiap perpindahan layar dicatat ke riwayat browser, dan
+   tombol back diterjemahkan jadi "kembali satu layar".
+
+   Dua hal yang ditangani khusus:
+   - Kamera dimatikan saat back, kalau tidak kameranya tetap hidup di
+     latar belakang dan baterai habis tanpa sebab yang terlihat.
+   - Back dari layar BERHASIL tidak kembali ke formulir yang sudah
+     dikosongkan (petugas akan mengira datanya hilang), melainkan
+     langsung ke halaman utama. */
+var sejarahSiap = false;
+var dariBack = false;
+
+function catatSejarah(langkah){
+  if (dariBack) return;
+  try {
+    if (!sejarahSiap){ history.replaceState({ l: langkah }, ''); sejarahSiap = true; return; }
+    if (!history.state || history.state.l !== langkah) history.pushState({ l: langkah }, '');
+  } catch (e) {}
+}
+
+window.addEventListener('popstate', function(e){
+  var l = (e.state && typeof e.state.l === 'number') ? e.state.l : 0;
+
+  /* Back tidak boleh mendaratkan petugas di layar yang sudah kehilangan
+     isinya. Sesudah SIMPAN, formulir dan barang terpilih dikosongkan —
+     kembali ke sana hanya akan membuat petugas mengira datanya hilang. */
+  if (l === 3 || langkahSekarang === 3) l = 0;
+
+  /* Aturan umum, bukan tambal per layar: layar mana pun selain halaman
+     utama hanya masuk akal kalau ada barang terpilih ATAU daftar berisi.
+     Sesudah SIMPAN dua-duanya kosong, jadi back dari halaman utama tidak
+     boleh menghidupkan kembali layar periksa atau formulir yang sudah
+     dibersihkan. */
+  if (l !== 0 && !terpilih && !daftar.length) l = 0;
+  if ((l === 1.5 || l === 2 || l === 5) && !terpilih) l = daftar.length ? 4 : 0;
+  try { hentikanKamera(); } catch (er) {}
+  dariBack = true;
+  try { tampilkan(l); } finally { dariBack = false; }
+});
+
+function tampilkan(langkah){
+  $('k1').className = (langkah===1) ? 'kartu' : 'kartu x';
+  $('kKonfirmasi').className = (langkah===1.5) ? 'kartu' : 'kartu x';
+  $('k2').className = (langkah===2) ? 'kartu' : 'kartu x';
+  $('k3').className = (langkah===3) ? 'kartu' : 'kartu x';
+  $('kDaftar').className = (langkah===4) ? 'kartu' : 'kartu x';
+  $('kPeriksa').className = (langkah===5) ? 'kartu' : 'kartu x';
+  $('pilihMode').className = (langkah===0) ? '' : 'x';
+  $('kepala').className = (langkah===0) ? 'x' : mode;
+  langkahSekarang = langkah;
+  catatSejarah(langkah);
+  if (langkah === 2 || langkah === 4) gambarDaftar();
+  aturBarisBawah();
+  window.scrollTo(0,0);
+}
+
+function setMode(m){
+  /* Daftar yang belum disimpan terikat pada satu jenis transaksi: isian
+     dokumennya berbeda (Supplier/PO/PR vs Unit/Keperluan). Mencampurnya
+     akan menulis kolom yang salah tanpa ada yang menyadari. */
+  if (daftar.length && daftar[0].jenis !== m){
+    alert('Masih ada ' + daftar.length + ' barang ' +
+          (daftar[0].jenis === 'masuk' ? 'MASUK' : 'KELUAR') +
+          ' yang belum disimpan.\n\nSelesaikan dulu (tekan SIMPAN), ' +
+          'baru pindah ke jenis yang lain.');
+    return;
+  }
+  mode = m;
+  $('kepalaTeks').textContent = (m==='masuk') ? 'BARANG MASUK' : 'BARANG KELUAR';
+  $('grupMasuk').className  = (m==='masuk') ? '' : 'x';
+  $('grupKeluar').className = (m==='keluar') ? '' : 'x';
+  $('rJudul').textContent = 'PERIKSA SEBELUM SIMPAN — ' + ((m==='masuk')?'MASUK':'KELUAR');
+  $('ringkas').className = 'ringkas ' + m;
+  bersihkanForm();
+  $('pesan').innerHTML='';
+  tampilkan(1);
+  if (!master) muatMaster(false);
+}
+
+function keAwal(){
+  mode = null; terpilih = null; hentikanKamera();
+  bersihkanForm(); $('q').value=''; $('hasil').innerHTML='';
+  tampilkan(0);
+}
+
+/* ================= pencarian ================= */
+function cariLokal(kode){
+  if (!master) return null;
+  for (var i=0;i<master.length;i++) if (master[i][0]===kode) return master[i];
+  return null;
+}
+
+var ALIAS=[['SELENOID','SOLENOID'],['TRAVO','TRAFO'],['TRANSMITER','TRANSMITTER'],
+           ['TEMPERATUR','TEMPERATURE'],['KABEL','CABLE'],['CREEPING','CREPING']];
+function samakan(t){ t=String(t).toUpperCase();
+  for(var i=0;i<ALIAS.length;i++) t=t.split(ALIAS[i][0]).join(ALIAS[i][1]); return t; }
+
+function cari(){
+  clearTimeout(jedaCari);
+  jedaCari = setTimeout(jalankanCari, 200);
+}
+
+function jalankanCari(){
+  var q = samakan($('q').value.trim());
+  if (q.length < 2){ $('hasil').innerHTML=''; return; }
+  if (!master){ $('hasil').innerHTML='<div class="n">Data barang belum diunduh.</div>'; return; }
+
+  var ini = ++nomorCari;
+  var kata = q.split(/\s+/).filter(Boolean), nilai = [];
+  for (var i=0;i<master.length;i++){
+    var K = String(master[i][0]).toUpperCase(), D = samakan(master[i][1]);
+    var g = K+' '+D, ok = true;
+    for (var j=0;j<kata.length;j++) if (g.indexOf(kata[j])<0){ ok=false; break; }
+    if (!ok) continue;
+    var s;
+    if (K===q) s=1000; else if (K.indexOf(q)===0) s=800;
+    else if (D===q) s=700; else if (D.indexOf(q)===0) s=600;
+    else if (D.indexOf(q)>-1) s=400; else s=200;
+    s -= Math.min(D.length/20, 40);
+    nilai.push([s, i]);
+  }
+  if (ini !== nomorCari) return;
+  nilai.sort(function(a,b){ return b[0]-a[0]; });
+
+  $('hasil').innerHTML = nilai.length ? nilai.slice(0,20).map(function(x){
+    var m = master[x[1]];
+    return '<div onclick="pilihKode(\'' + m[0] + '\')"><div class="k">' + aman(m[0]) +
+           '</div><div class="n">' + aman(m[1]) + '</div></div>';
+  }).join('') : '<div class="n">Tidak ada barang yang cocok.</div>';
+}
+
+window.pilihKode = function(kode){
+  var m = cariLokal(kode);
+  if (!m){ pesan('Kode "'+kode+'" tidak ada di data barang. Coba Perbarui data barang.', 'salah'); return; }
+  terpilih = { kode:m[0], nama:m[1], uom:m[2], stok:m[3], gudang:m[4], rak:m[5] };
+
+  var rinci = 'UOM ' + terpilih.uom +
+              (terpilih.gudang ? '  ·  ' + terpilih.gudang : '') +
+              (terpilih.rak ? '  ·  Rak ' + terpilih.rak : '');
+
+  /* Berhenti dulu di layar konfirmasi. Salah scan paling mahal kalau
+     baru ketahuan setelah tersimpan. */
+  $('cKode').textContent  = terpilih.kode;
+  $('cNama').textContent  = terpilih.nama;
+  $('cRinci').textContent = rinci;
+
+  $('iKode').textContent  = terpilih.kode;
+  $('iNama').textContent  = terpilih.nama;
+  $('iRinci').textContent = rinci;
+  $('lSatuan').textContent = '(' + terpilih.uom + ')';
+
+  $('pesan').innerHTML='';
+  hentikanKamera();
+  tampilkan(1.5);
+};
+
+function konfirmasiBenar(){
+  if (terpilih && terpilih.rak) $('lokasi').value = terpilih.rak;
+  perbaruiRingkas();
+  tampilkan(2);
+  $('qty').focus();
+}
+
+function konfirmasiSalah(){
+  terpilih = null;
+  $('q').value=''; $('hasil').innerHTML=''; $('pesan').innerHTML='';
+  tampilkan(1);
+}
+
+/* ================= kamera ================= */
+function bukaKamera(){
+  if (kameraJalan){ hentikanKamera(); return; }
+  if (typeof Html5Qrcode === 'undefined'){ pesan('Pembaca QR belum termuat. Muat ulang halaman.', 'salah'); return; }
+  $('reader').className=''; $('bScan').textContent='TUTUP KAMERA'; kameraJalan=true;
+  scanner = new Html5Qrcode('reader', { formatsToSupport:[
+    Html5QrcodeSupportedFormats.QR_CODE, Html5QrcodeSupportedFormats.CODE_128,
+    Html5QrcodeSupportedFormats.DATA_MATRIX ]});
+  scanner.start({ facingMode:'environment' }, { fps:12, qrbox:{ width:250, height:250 } },
+    function(teks){ if(navigator.vibrate) navigator.vibrate(70); pilihKode(String(teks).trim()); },
+    function(){}
+  ).catch(function(e){
+    kameraJalan=false; $('reader').className='x'; $('bScan').textContent='SCAN QR';
+    pesan('Kamera tidak bisa dibuka: '+e+'. Gunakan pencarian ketik di bawah.', 'salah');
+  });
+}
+function hentikanKamera(){
+  if (scanner && kameraJalan){ try{ scanner.stop().then(function(){ scanner.clear(); }); }catch(e){} }
+  kameraJalan=false; $('reader').className='x'; $('bScan').textContent='SCAN QR';
+}
+
+/* ================= form ================= */
+function perbaruiRingkas(){
+  $('rNama').textContent = terpilih ? terpilih.nama : '-';
+  var q = $('qty').value;
+  $('rQty').textContent = (Number(q)>0 && terpilih) ? (q + ' ' + terpilih.uom) : 'belum diisi';
+  $('rUser').textContent = $('user').value.trim() || 'belum diisi';
+}
+
+function bersihkanForm(){
+  ['qty','supplier','po','pr','unit','keperluan','gudang','lokasi']
+    .forEach(function(id){ $(id).value=''; });
+  ['qty','user'].forEach(function(id){ $(id).className=''; });
+  perbaruiRingkas();
+}
+
+/* SIMPAN dibuat dua tahap: tekan SIMPAN -> layar periksa -> YA, SIMPAN.
+   Satu ketukan tambahan, disengaja. Alasannya: salah ketik jumlah baru
+   ketahuan setelah masuk sheet praktis tidak bisa dibetulkan dari HP —
+   harus lewat penanggung jawab spreadsheet. Satu ketukan sekarang jauh
+   lebih murah daripada koreksi nanti.
+   Layarnya selalu muncul, juga untuk satu barang: aplikasi yang kadang
+   bertanya dan kadang tidak lebih membingungkan daripada yang selalu
+   bertanya. */
+var asalPeriksa = 2;
+
+function simpan(){
+  if (!sesi){ pesan('Sesi habis. Silakan login ulang.', 'salah'); tampilLogin(true); return; }
+
+  var sedang = ambilIsian(daftar.length > 0);
+  var calon = daftar.slice();
+  if (sedang) calon.push(sedang);
+  if (!calon.length) return;              /* pesan sudah ditampilkan ambilIsian */
+
+  asalPeriksa = (langkahSekarang === 4) ? 4 : 2;
+
+  $('periksaJenis').textContent =
+    (mode === 'masuk' ? 'BARANG MASUK' : 'BARANG KELUAR') + ' — ' + calon.length + ' barang';
+
+  var html = '';
+  for (var i = 0; i < calon.length; i++){
+    html += '<div class="pk"><div class="nm">' + aman(teksBarang(calon[i])) + '</div>' +
+            '<div class="qt">' + aman(teksQty(calon[i])) + '</div></div>';
+  }
+  $('periksaIsi').innerHTML = html;
+  $('pesan').innerHTML = '';
+  tampilkan(5);
+}
+
+function simpanBeneran(){
+  if (!sesi){ pesan('Sesi habis. Silakan login ulang.', 'salah'); tampilLogin(true); return; }
+
+  /* Barang yang sedang di layar ikut disimpan. Kalau layarnya kosong tapi
+     daftar sudah berisi (petugas menekan SIMPAN setelah menghapus baris
+     terakhir), yang tersimpan adalah isi daftar saja. */
+  var sedang = ambilIsian(daftar.length > 0);
+  var kirim = daftar.slice();
+  if (sedang) kirim.push(sedang);
+  if (!kirim.length) return;                 /* pesan sudah ditampilkan ambilIsian */
+
+
+  /* Sesi dicap SEKARANG, bukan saat pengiriman. Kalau dicap saat kirim,
+     transaksi yang tertahan di antrean melewati pergantian shift akan
+     tercatat atas nama operator berikutnya. */
+  for (var i = 0; i < kirim.length; i++){
+    kirim[i].sesi = sesi;
+    antre.push(kirim[i]);
+  }
+  tulisLokal(K_ANTRE, antre);
+
+  /* Daftar dikosongkan HANYA sesudah antrean tertulis ke HP. Kalau urutannya
+     dibalik dan penulisan gagal, barangnya hilang dari dua-duanya. */
+  daftar = []; simpanDaftar(); gambarDaftar();
+  papan();
+
+  var htmlDaftar = '';
+  for (var k = 0; k < kirim.length; k++){
+    htmlDaftar += '<div class="sb">' + aman(teksBarang(kirim[k])) + ' &mdash; ' +
+                  aman(teksQty(kirim[k])) + '</div>';
+  }
+  $('sIkon').textContent = '✓';
+  $('sApa').textContent = (mode==='masuk' ? 'TERSIMPAN — BARANG MASUK' : 'TERSIMPAN — BARANG KELUAR') +
+                          ' (' + kirim.length + ' barang)';
+  $('sDet').textContent = '';
+  $('sDaftar').innerHTML = htmlDaftar;
+  $('pesan').innerHTML='';
+
+  /* Melayani orang berikutnya: isian dokumen ikut dikosongkan di sini,
+     bukan saat menambah barang. */
+  bersihkanForm(); terpilih = null;
+  $('user').value = '';          /* transaksi berikutnya sering untuk orang lain */
+  $('q').value=''; $('hasil').innerHTML='';
+
+  tampilkan(3);
+  kirimAntre();
+}
+
+/* ================= tombol ================= */
+$('bMasuk').addEventListener('click', function(){ setMode('masuk'); });
+$('bKeluar').addEventListener('click', function(){ setMode('keluar'); });
+$('bGanti').addEventListener('click', keAwal);
+$('bScan').addEventListener('click', bukaKamera);
+$('bBenar').addEventListener('click', konfirmasiBenar);
+$('bSalah').addEventListener('click', konfirmasiSalah);
+$('bSimpan').addEventListener('click', simpan);
+$('bTambahLain').addEventListener('click', tambahBarangLain);
+$('ingatDaftar').addEventListener('click', bukaDaftar);
+$('bSimpanDaftar').addEventListener('click', simpan);
+$('bYaSimpan').addEventListener('click', simpanBeneran);
+$('bBatalSimpan').addEventListener('click', function(){
+  pesan('Belum disimpan. Silakan diperbaiki dulu.', 'baik');
+  tampilkan(asalPeriksa);
+});
+$('bTutupDaftar').addEventListener('click', keAwal);
+$('bTambahDariDaftar').addEventListener('click', function(){
+  terpilih = null; bersihkanBarangSaja();
+  $('q').value=''; $('hasil').innerHTML='';
+  tampilkan(1);
+});
+$('bBatal').addEventListener('click', function(){ terpilih=null; bersihkanForm();
+  $('q').value=''; $('hasil').innerHTML=''; tampilkan(1); });
+/* Sesudah selesai, petugas kembali ke titik netral. Transaksi berikutnya
+   sering untuk orang lain dan bisa jenis lain; kalau mode ditinggal
+   menyala, petugas berikutnya meneruskan pilihan orang sebelumnya tanpa
+   sadar dan barang keluar bisa tercatat sebagai barang masuk. */
+$('bLagi').addEventListener('click', keAwal);
+$('q').addEventListener('input', cari);
+$('qty').addEventListener('input', perbaruiRingkas);
+$('user').addEventListener('input', perbaruiRingkas);
+$('tSegarkan').addEventListener('click', function(){ muatMaster(true); });
+function tulisVersi(){
+  var v = bacaLokal(K_VSRV);
+  var teks = 'Versi aplikasi ' + VERSI +
+    ' · Server: ' + (v ? 'v' + v : 'belum terdeteksi');
+  $('tVersi').textContent = teks;
+  $('lVersi').textContent = teks;
+}
+tulisVersi();
+
+/* ================= mulai ================= */
+antre = bacaLokal(K_ANTRE) || [];
+master = bacaLokal(K_MASTER);
+daftar = bacaLokal(K_DAFTAR) || [];
+sesi = bacaLokal(K_SESI) || null;
+namaOperator = bacaLokal(K_NAMA) || '';
+papan();
+ingatDaftar();
+tampilkan(0);
+tulisSiapa();
+
+/* Gerbang login. Tanpa sesi, layar login menutup seluruh halaman dan
+   tidak ada unduhan atau pengiriman yang dijalankan. */
+if (!sesi){
+  tampilLogin(true);
+} else {
+  tampilLogin(false);
+  if (!master) muatMaster(false);
+  kirimAntre();
+}
+
+$('bLogin').addEventListener('click', login);
+$('lSandi').addEventListener('keydown', function(e){ if (e.key === 'Enter') login(); });
+$('lNama').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('lSandi').focus(); });
+$('keluarAkun').addEventListener('click', keluar);
+
+/* Status mode offline ditampilkan supaya kegagalan tidak lagi diam-diam.
+   Penyebab tersering: nama berkas di repo berbeda, atau sw.js belum diupload. */
+function cekOffline(){
+  var el = $('tOffline');
+  if (!('serviceWorker' in navigator)){ el.textContent = 'Mode offline: tidak didukung browser ini'; return; }
+  if (!('caches' in window)){ el.textContent = 'Mode offline: tidak didukung'; return; }
+
+  caches.keys().then(function(nama){
+    var punya = nama.filter(function(n){ return n.indexOf('gudang-teknik') === 0; });
+    if (!punya.length){ el.textContent = 'Mode offline: BELUM siap — buka sekali lagi saat ada sinyal'; return; }
+    caches.open(punya[0]).then(function(c){
+      c.keys().then(function(k){
+        var adaHalaman = k.some(function(r){ return r.url.indexOf('.html') > -1; });
+        el.textContent = adaHalaman
+          ? 'Mode offline: siap (' + punya[0] + ')'
+          : 'Mode offline: BELUM siap — halaman belum tersimpan';
+      });
+    });
+  }).catch(function(){ el.textContent = ''; });
+}
+
+/* Halaman ini sudah terlanjur diambil browser SEBELUM service worker
+   mengambil alih, jadi tidak lewat fetch handler dan tidak ikut tersimpan.
+   Akibatnya setiap kali versi naik, petugas melihat "BELUM siap" sekali —
+   terlihat seperti sistem rusak padahal normal. Karena itu halaman meminta
+   service worker menyimpan dirinya sendiri, lalu status diperiksa ulang
+   begitu balasan datang. */
+if ('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js')
+    .then(function(){ return navigator.serviceWorker.ready; })
+    .then(function(reg){
+      navigator.serviceWorker.addEventListener('message', function(ev){
+        if (ev.data && ev.data.tersimpan) cekOffline();
+      });
+      var sw = reg.active || navigator.serviceWorker.controller;
+      if (sw) sw.postMessage({ simpan: location.href });
+      setTimeout(cekOffline, 1500);          /* cadangan bila balasan tak datang */
+    })
+    .catch(function(e){ $('tOffline').textContent = 'Mode offline: gagal dipasang — ' + e.message; });
+} else { cekOffline(); }
+})();
+</script>
+</body>
+</html>
