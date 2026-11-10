@@ -21,7 +21,7 @@
  *   Halaman  -> JARINGAN DULU (maks 3 detik), tembolok sebagai cadangan.
  *   Aset     -> TEMBOLOK DULU, isinya tidak pernah berubah.
  */
-var VERSI = 'v73';
+var VERSI = 'v74';
 var CACHE = 'gudang-teknik-' + VERSI;
 
 self.addEventListener('install', function (e) {
