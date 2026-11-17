@@ -1,27 +1,5 @@
-/* Service worker Gudang Teknik.
- *
- * PELAJARAN YANG SUDAH KENA:
- * 1. Jangan menyebut nama berkas halaman secara kaku di sini. Kalau di repo
- *    namanya berbeda (scanapp.html, scangudtek.html, dsb), penyimpanan gagal
- *    DIAM-DIAM dan mode offline mati tanpa pesan apa pun.
- *    Solusi: halaman disimpan saat pertama kali dibuka (runtime), bukan
- *    didaftarkan di muka. Nama apa pun otomatis tertangani.
- * 2. Nama cache HARUS berubah setiap scanner.html berubah, kalau tidak HP
- *    tetap disuguhi salinan lama. Nama cache di bawah mengikuti versi
- *    aplikasi — ubah keduanya bersamaan.
- *
- * 3. Halaman sudah diambil browser SEBELUM service worker mengambil alih,
- *    jadi tidak ikut tersimpan sendiri. Tanpa penanganan khusus, setiap naik
- *    versi petugas melihat "BELUM siap" sekali dan mengira sistem rusak.
- *    Solusi: halaman mengirim pesan {simpan:...}, dijawab {tersimpan:true}.
- * 4. Sinyal LEMAH lebih berbahaya daripada sinyal MATI — fetch menggantung
- *    tanpa gagal. Solusi: batas 3 detik, lalu pakai salinan lokal.
- *
- * Strategi:
- *   Halaman  -> JARINGAN DULU (maks 3 detik), tembolok sebagai cadangan.
- *   Aset     -> TEMBOLOK DULU, isinya tidak pernah berubah.
- */
-var VERSI = 'v74';
+
+var VERSI = 'v76';
 var CACHE = 'gudang-teknik-' + VERSI;
 
 self.addEventListener('install', function (e) {
