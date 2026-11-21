@@ -1,7 +1,8 @@
-
+/* 1. VERSI */
 var VERSI = 'v76';
 var CACHE = 'gudang-teknik-' + VERSI;
 
+/* 2. PASANG DAN AKTIFKAN */
 self.addEventListener('install', function (e) {
   self.skipWaiting();
 });
@@ -14,6 +15,7 @@ self.addEventListener('activate', function (e) {
   self.clients.claim();
 });
 
+/* 3. SIMPAN HALAMAN DI HP */
 function halaman(req) {
   return req.mode === 'navigate' ||
          req.destination === 'document' ||
@@ -27,9 +29,6 @@ function simpan(req, res) {
   return res;
 }
 
-/* Halaman meminta dirinya disimpan tepat setelah service worker aktif.
-   Tanpa ini, halaman baru tersimpan pada pembukaan BERIKUTNYA, sehingga
-   setiap naik versi petugas melihat "Mode offline: BELUM siap" sekali. */
 self.addEventListener('message', function (e) {
   if (!e.data || !e.data.simpan) return;
   e.waitUntil(
@@ -40,10 +39,7 @@ self.addEventListener('message', function (e) {
   );
 });
 
-/* Sinyal LEMAH lebih berbahaya daripada sinyal MATI: fetch tidak gagal,
-   hanya menggantung, dan petugas menatap layar kosong padahal salinan
-   offline ada di HP-nya. Batas 3 detik, setelah itu pakai salinan lokal.
-   Versi baru tetap terambil begitu sinyal membaik. */
+/* 4. AMBIL HALAMAN DAN ASET */
 var BATAS_MS = 3000;
 
 function ambilHalaman(req) {
@@ -58,19 +54,13 @@ function ambilHalaman(req) {
 
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
-  if (e.request.url.indexOf('script.google') > -1) return;   // API selalu langsung
-  /* Unduhan CSV data barang juga dilepas langsung ke jaringan. URL-nya
-     diberi penanda waktu yang berbeda setiap kali, jadi kalau ikut
-     ditembolok, tidak ada satu pun salinan yang saling menimpa: setiap
-     penekanan "Perbarui data barang" meninggalkan ~1MB baru di HP
-     petugas sampai versi aplikasi naik. Ditemukan lewat sim-sw.js. */
+  if (e.request.url.indexOf('script.google') > -1) return;
   if (e.request.url.indexOf('docs.google.com') > -1) return;
 
   if (halaman(e.request)) {
     e.respondWith(
       ambilHalaman(e.request)
         .catch(function () {
-          /* Tidak ada sinyal: pakai salinan halaman ini, apa pun namanya. */
           return caches.match(e.request).then(function (t) {
             if (t) return t;
             return caches.open(CACHE).then(function (c) {
@@ -91,7 +81,6 @@ self.addEventListener('fetch', function (e) {
     return;
   }
 
-  /* Aset statis: pakai tembolok, sambil menyegarkan di latar belakang. */
   e.respondWith(
     caches.match(e.request).then(function (t) {
       var net = fetch(e.request)
